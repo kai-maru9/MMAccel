@@ -1,0 +1,66 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build debug",
+			"type": "cargo",
+			"command": "build",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": ["/c"]
+				},
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "debug copy",
+			"type": "shell",
+			"command": ".\\copy.bat",
+			"args": ["debug"],
+			"dependsOn": "build debug",
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": ["/c"]
+				},
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "build release",
+			"type": "cargo",
+			"command": "build",
+			"args": ["--release"],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": ["/c"]
+				},
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "release copy",
+			"type": "shell",
+			"command": ".\\copy.bat",
+			"args": ["release"],
+			"dependsOn": "build release",
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": ["/c"]
+				},
+				"cwd": "${workspaceFolder}"
+			}
+		}
+	]
+}

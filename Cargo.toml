@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "bindings",
+    "d3d9",
+    "mmaccel_ex",
+]
