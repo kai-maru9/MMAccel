@@ -10,7 +10,7 @@
             "FrameNext": [ "1フレーム次", "key", "27" ],
             "FrameKeyNext": [ "次のキーフレーム", "button", "214" ],
             "FrameLast": [ "フレームの最後尾", "button", "22f" ],
-            "JumpCurrentFrame": [ "現フレームボタン", "buton", "1ab" ],
+            "JumpCurrentFrame": [ "現フレームボタン", "button", "1ab" ],
             "KeyCopy": [ "コピー", "button", "1a4" ],
             "KeyPaste": [ "ペースト", "button", "1a5" ],
             "KeyReversePaste": [ "反転ペースト", "button", "1a6" ],
