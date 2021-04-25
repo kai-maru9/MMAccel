@@ -92,34 +92,34 @@ impl Menu {
             let name = to_wchar("MMAccel");
             let mut info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as _,
-                fMask: MENU_ITEM_MASK::MIIM_TYPE | MENU_ITEM_MASK::MIIM_SUBMENU | MENU_ITEM_MASK::MIIM_ID,
+                fMask: MENU_ITEM_MASK::MIIM_TYPE
+                    | MENU_ITEM_MASK::MIIM_SUBMENU
+                    | MENU_ITEM_MASK::MIIM_ID,
                 fType: MENU_ITEM_TYPE::MFT_STRING,
                 dwTypeData: PWSTR(name.as_ptr() as _),
                 hSubMenu: m,
                 ..Default::default()
             };
             InsertMenuItemW(wnd_menu, IDR_MMACCEL_MENU as _, FALSE, &mut info);
-            
+
             let index = 0;
             let index = add_item(m, index, MenuId::LaunchConfig, "キー設定");
             let index = separate(m, index);
             let index = add_item(m, index, MenuId::ModelPallete, "モデルパレット");
             let index = separate(m, index);
             add_item(m, index, MenuId::Version, "バージョン情報");
-          
+
             DrawMenuBar(hwnd);
-            Self {
-                m,
-            }
+            Self { m }
         }
     }
-    
+
     #[inline]
     pub fn model_palette(&self, checked: bool) {
         set_check_item(self.m, MenuId::ModelPallete, checked);
     }
-    
-    pub fn on_command(&self, wparam: WPARAM) -> Option<MenuItem> {
+
+    pub fn recv_command(&self, wparam: WPARAM) -> Option<MenuItem> {
         if ((wparam.0 >> 16) & 0xffff) == 0 {
             let id = (wparam.0 & 0xffff) as u16;
             match id {
@@ -130,10 +130,18 @@ impl Menu {
                     Some(MenuItem::ModelPallete(b))
                 }
                 _ if id == MenuId::Version as u16 => Some(MenuItem::Version),
-                _ => None
+                _ => None,
             }
         } else {
             None
+        }
+    }
+}
+
+impl Drop for Menu {
+    fn drop(&mut self) {
+        unsafe {
+            DestroyMenu(self.m);
         }
     }
 }

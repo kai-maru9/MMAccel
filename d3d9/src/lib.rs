@@ -5,7 +5,7 @@ use once_cell::sync::OnceCell;
 
 static mut D3D9: OnceCell<Library> = OnceCell::new();
 static mut MME: OnceCell<Library> = OnceCell::new();
-static mut MMACCEL_EX: OnceCell<Library> = OnceCell::new();
+static mut MMACCEL: OnceCell<Library> = OnceCell::new();
 
 fn error(msg: &str) {
     message_box(
@@ -16,11 +16,11 @@ fn error(msg: &str) {
 }
 
 #[inline]
-fn mmaccel_ex_run(base_addr: usize) {
+fn mmaccel_run(base_addr: usize) {
     unsafe {
-        if let Some(mmaccel_ex) = MMACCEL_EX.get() {
-            let f = mmaccel_ex
-                .get::<unsafe fn(usize)>(b"mmaccel_ex_run")
+        if let Some(mmaccel) = MMACCEL.get() {
+            let f = mmaccel
+                .get::<unsafe fn(usize)>(b"mmaccel_run")
                 .unwrap();
             f(base_addr)
         }
@@ -30,8 +30,6 @@ fn mmaccel_ex_run(base_addr: usize) {
 #[no_mangle]
 pub extern "system" fn Direct3DCreate9(version: u32) -> *mut std::ffi::c_void {
     unsafe {
-        let base_addr = GetModuleHandleW(PWSTR::NULL) as usize;
-        mmaccel_ex_run(base_addr);
         if let Some(d3d9) = D3D9.get() {
             let f = d3d9
                 .get::<unsafe fn(u32) -> *mut std::ffi::c_void>(b"Direct3DCreate9")
@@ -69,20 +67,22 @@ pub extern "system" fn DllMain(_: HINSTANCE, reason: u32, _: *mut std::ffi::c_vo
                 error("d3d9.dllを読み込めませんでした");
                 return FALSE;
             }
-            let mmaccel_ex = Library::new(path.join("MMAccelEx").join("mmaccel_ex.dll"));
-            if let Ok(mmaccel_ex) = mmaccel_ex {
-                MMACCEL_EX.set(mmaccel_ex).unwrap();
+            let mmaccel = Library::new(path.join("MMAccel").join("mmaccel.dll"));
+            if let Ok(mmaccel) = mmaccel {
+                MMACCEL.set(mmaccel).unwrap();
             } else {
-                error("mmaccel_ex.dllを読み込めませんでした。");
+                error("mmaccel.dllを読み込めませんでした。");
             }
             let mme = Library::new(path.join("MMHack.dll"));
             if let Ok(mme) = mme {
                 MME.set(mme).unwrap();
             }
+            let base_addr = GetModuleHandleW(PWSTR::NULL) as usize;
+            mmaccel_run(base_addr);
         },
         DLL_PROCESS_DETACH => unsafe {
             MME.take();
-            MMACCEL_EX.take();
+            MMACCEL.take();
             D3D9.take();
         },
         _ => {}

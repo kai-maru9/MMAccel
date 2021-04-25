@@ -2,8 +2,7 @@
 
 pub mod wrapper {
     use super::Windows::Win32::{
-        KeyboardAndMouseInput::*, Shell::*, SystemServices::*, WindowsAndMessaging::*,
-        Debug::*,
+        Debug::*, KeyboardAndMouseInput::*, Shell::*, SystemServices::*, WindowsAndMessaging::*,
     };
 
     #[inline]
@@ -89,14 +88,12 @@ pub mod wrapper {
             GetKeyboardState(v.as_mut_ptr());
         }
     }
-    
+
     #[inline]
     pub fn get_last_error() -> windows::HRESULT {
-        unsafe {
-            windows::HRESULT::from_win32(GetLastError())
-        }
+        unsafe { windows::HRESULT::from_win32(GetLastError()) }
     }
-    
+
     #[inline]
     pub fn enum_windows() -> Vec<HWND> {
         extern "system" fn callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
@@ -116,7 +113,7 @@ pub mod wrapper {
             }
         }
     }
-    
+
     #[inline]
     pub fn get_window_thread_process_id(hwnd: HWND) -> u32 {
         unsafe {
@@ -125,7 +122,7 @@ pub mod wrapper {
             id
         }
     }
-    
+
     #[inline]
     pub fn get_class_name(hwnd: HWND) -> String {
         unsafe {

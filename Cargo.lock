@@ -114,8 +114,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
 
 [[package]]
-name = "mmaccel_ex"
-version = "0.1.0"
+name = "mmaccel"
+version = "2.0.0"
 dependencies = [
  "bindings",
  "env_logger",
