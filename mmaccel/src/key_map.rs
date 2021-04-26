@@ -210,8 +210,8 @@ impl Default for KeyMap {
         m.insert("FrameKeyNext", Keys::new(&[VK_CONTROL, VK_RIGHT]));
         m.insert("BonePrev", Keys::new(&[VK_UP]));
         m.insert("BoneNext", Keys::new(&[VK_DOWN]));
-        m.insert("BoneCopy", Keys::new(&[VK_CONTROL, b'C' as _]));
-        m.insert("BonePaste", Keys::new(&[VK_CONTROL, b'V' as _]));
+        m.insert("KeyCopy", Keys::new(&[VK_CONTROL, b'C' as _]));
+        m.insert("KeyPaste", Keys::new(&[VK_CONTROL, b'V' as _]));
         m.insert("MenuBackgroundBlack", Keys::new(&[b'B' as _]));
         m.insert("MenuEditCenterBias", Keys::new(&[b'D' as _]));
         m.insert("ChangeSpace", Keys::new(&[b'L' as _]));

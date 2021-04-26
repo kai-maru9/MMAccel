@@ -36,13 +36,11 @@ impl Handler {
         }
     }
 
-    pub fn key_down(&mut self, _vk: u32, mmd_window: HWND) {
-        get_keyboard_state(&mut self.input);
-        self.input_keys.keyboard_state(&self.input);
-        if let Some(item) = self.handler.get(&self.input_keys) {
+    pub fn key_down(&mut self, vk: u32, mmd_window: HWND) {
+        fn handle(item: &ItemKind, key_states: &mut HashMap<u32, bool>, mmd_window: HWND) {
             match item {
                 ItemKind::Key(k) => {
-                    if let Some(ks) = self.key_states.get_mut(k) {
+                    if let Some(ks) = key_states.get_mut(k) {
                         *ks = true;
                         log::debug!("Key: 0x{:x}", k);
                     }
@@ -116,6 +114,17 @@ impl Handler {
                 },
                 _ => {}
             }
+        }
+
+        get_keyboard_state(&mut self.input);
+        self.input_keys.keyboard_state(&self.input);
+        if let Some(item) = self.handler.get(&self.input_keys) {
+            handle(item, &mut self.key_states, mmd_window); 
+            return;
+        }
+        self.input_keys.vk(vk);
+        if let Some(item) = self.handler.get(&self.input_keys) {
+            handle(item, &mut self.key_states, mmd_window); 
         }
     }
 
