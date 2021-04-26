@@ -7,14 +7,12 @@ pub const IDR_MMACCEL_MENU: u16 = 50000;
 #[repr(u16)]
 pub enum MenuId {
     LaunchConfig = IDR_MMACCEL_MENU + 1,
-    ModelPallete,
     Version,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum MenuItem {
     LaunchConfig,
-    ModelPallete(bool),
     Version,
 }
 
@@ -50,6 +48,7 @@ fn separate(m: HMENU, index: u32) -> u32 {
 }
 
 #[inline]
+#[allow(dead_code)]
 fn is_checked_item(m: HMENU, id: MenuId) -> bool {
     unsafe {
         let mut info = MENUITEMINFOW {
@@ -63,6 +62,7 @@ fn is_checked_item(m: HMENU, id: MenuId) -> bool {
 }
 
 #[inline]
+#[allow(dead_code)]
 fn set_check_item(m: HMENU, id: MenuId, checked: bool) {
     unsafe {
         let mut info = MENUITEMINFOW {
@@ -115,11 +115,6 @@ impl Menu {
             let id = (wparam.0 & 0xffff) as u16;
             match id {
                 _ if id == MenuId::LaunchConfig as u16 => Some(MenuItem::LaunchConfig),
-                _ if id == MenuId::ModelPallete as u16 => {
-                    let b = !is_checked_item(self.m, MenuId::ModelPallete);
-                    set_check_item(self.m, MenuId::ModelPallete, b);
-                    Some(MenuItem::ModelPallete(b))
-                }
                 _ if id == MenuId::Version as u16 => Some(MenuItem::Version),
                 _ => None,
             }

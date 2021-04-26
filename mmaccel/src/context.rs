@@ -81,7 +81,6 @@ impl Context {
                 if let Some(mmd_window) = self.mmd_window.as_ref() {
                     match mmd_window.menu.recv_command(data.wParam) {
                         Some(MenuItem::LaunchConfig) => println!("launch"),
-                        Some(MenuItem::ModelPallete(b)) => println!("model palette({})", b),
                         Some(MenuItem::Version) => version_info(mmd_window.window),
                         _ => {}
                     }
