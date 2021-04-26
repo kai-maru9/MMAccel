@@ -105,18 +105,11 @@ impl Menu {
             let index = 0;
             let index = add_item(m, index, MenuId::LaunchConfig, "キー設定");
             let index = separate(m, index);
-            let index = add_item(m, index, MenuId::ModelPallete, "モデルパレット");
-            let index = separate(m, index);
             add_item(m, index, MenuId::Version, "バージョン情報");
 
             DrawMenuBar(hwnd);
             Self { m }
         }
-    }
-
-    #[inline]
-    pub fn model_palette(&self, checked: bool) {
-        set_check_item(self.m, MenuId::ModelPallete, checked);
     }
 
     pub fn recv_command(&self, wparam: WPARAM) -> Option<MenuItem> {

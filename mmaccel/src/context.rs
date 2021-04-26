@@ -1,8 +1,8 @@
 use crate::*;
 use bindings::wrapper::*;
 use handler::Handler;
-use mmd_map::MmdMap;
 use key_map::KeyMap;
+use mmd_map::MmdMap;
 
 struct MmdWindow {
     window: HWND,
@@ -33,10 +33,20 @@ pub struct Context {
 
 impl Context {
     #[inline]
-    pub fn new() -> Self {
-        let mmd_map = MmdMap::new("MMAccel/mmd_map.json").unwrap();
-        let handler = Handler::new(&mmd_map, &KeyMap::default());
-        Self {
+    pub fn new() -> std::io::Result<Self> {
+        const MMD_MAP_PATH: &str = "MMAccel/mmd_map.json";
+        const KEY_MAP_PATH: &str = "MMAccel/key_map.json";
+        let mmd_map = MmdMap::from_file(MMD_MAP_PATH)?;
+        let key_map = KeyMap::from_file(KEY_MAP_PATH).unwrap_or_else(|_| {
+            let m = KeyMap::default();
+            if let Ok(file) = std::fs::File::create(KEY_MAP_PATH) {
+                serde_json::to_writer_pretty(std::io::BufWriter::new(file), &m).ok();
+                log::debug!("written key_map.json");
+            }
+            m
+        });
+        let handler = Handler::new(mmd_map, key_map);
+        Ok(Self {
             _call_window_proc_ret: HookHandle::new(
                 SetWindowsHookEx_idHook::WH_CALLWNDPROCRET,
                 Some(hook_call_window_proc_ret),
@@ -49,7 +59,7 @@ impl Context {
             ),
             mmd_window: None,
             handler,
-        }
+        })
     }
 
     pub fn call_window_proc_ret(&mut self, data: &CWPRETSTRUCT) {

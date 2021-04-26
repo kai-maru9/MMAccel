@@ -126,8 +126,7 @@
             "SelfShadowMode1": [ "モード1", "button", "233" ],
             "SelfShadowMode2": [ "モード2", "button", "234" ],
             "SelfShadowRangeFocus": [ "影範囲入力", "edit", "231" ],
-            "SelfShadowRegister": [ "登録", "button", "235" ],
-            "SelfShadowModeChange": [ "モード切り替え", "ss_mode_change" ]
+            "SelfShadowRegister": [ "登録", "button", "235" ]
         },
         "アクセサリ": {
             "AccessoryFold": [ "折りたたみ", "fold", "1e8", "1e9" ],

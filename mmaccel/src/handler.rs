@@ -1,6 +1,6 @@
 use crate::key_map::Keys;
-use crate::mmd_map::*;
 use crate::key_map::*;
+use crate::mmd_map::*;
 use crate::*;
 use std::collections::HashMap;
 
@@ -12,7 +12,7 @@ pub struct Handler {
 }
 
 impl Handler {
-    pub fn new(mmd_map: &MmdMap, key_map: &KeyMap) -> Self {
+    pub fn new(mmd_map: MmdMap, key_map: KeyMap) -> Self {
         let mut key_states = HashMap::new();
         mmd_map
             .iter()
@@ -21,9 +21,9 @@ impl Handler {
                 key_states.insert(item.kind.as_key().unwrap(), false);
             });
         let mut handler = HashMap::new();
-        for (k, v) in key_map.iter() {
-            if let Some(item) = mmd_map.get(k) {
-                handler.insert(v.clone(), item.kind);
+        for (k, v) in key_map.into_iter() {
+            if let Some(item) = mmd_map.get(&k) {
+                handler.insert(v, item.kind);
             } else {
                 log::error!("handler.insert error: {}", k);
             }
@@ -38,33 +38,28 @@ impl Handler {
 
     pub fn key_down(&mut self, _vk: u32, mmd_window: HWND) {
         get_keyboard_state(&mut self.input);
-        self.input_keys.clear();
-        for (i, k) in self.input.iter().enumerate() {
-            if i <= 0xe0 && (k & 0x80) != 0 {
-                self.input_keys.push(i as u32);
-            }
-        }
-        self.input_keys.sort();
+        self.input_keys.keyboard_state(&self.input);
         if let Some(item) = self.handler.get(&self.input_keys) {
             match item {
                 ItemKind::Key(k) => {
                     if let Some(ks) = self.key_states.get_mut(k) {
                         *ks = true;
+                        log::debug!("Key: 0x{:x}", k);
                     }
                 }
                 ItemKind::Button(id) => unsafe {
                     let hwnd = GetDlgItem(mmd_window, *id as _);
                     if IsWindowVisible(hwnd) == TRUE && IsWindowEnabled(hwnd) == TRUE {
                         PostMessageA(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
+                        log::debug!("Button: 0x{:x}", id);
                     }
-                    log::debug!("Button: 0x{:x}", id);
                 },
                 ItemKind::Edit(id) => unsafe {
                     let hwnd = GetDlgItem(mmd_window, *id as _);
                     if IsWindowVisible(hwnd) == TRUE && IsWindowEnabled(hwnd) == TRUE {
                         SetFocus(hwnd);
+                        log::debug!("Edit: 0x{:x}", id);
                     }
-                    log::debug!("Edit: 0x{:x}", id);
                 },
                 ItemKind::Combo(dir, id) => unsafe {
                     #[inline]
@@ -76,6 +71,7 @@ impl Handler {
                             WPARAM(((id & 0xffff) | (CBN_SELCHANGE << 16)) as _),
                             LPARAM(hwnd.0),
                         );
+                        log::debug!("Combo: 0x{:x}", id);
                     }
 
                     let hwnd = GetDlgItem(mmd_window, *id as _);
@@ -93,7 +89,6 @@ impl Handler {
                         }
                         _ => {}
                     }
-                    log::debug!("Combo: {:?}, 0x{:x}", dir, id);
                 },
                 ItemKind::Menu(index, sub_index) => unsafe {
                     let m = GetSubMenu(GetMenu(mmd_window), *index as _);
@@ -112,11 +107,12 @@ impl Handler {
                     let hide = GetDlgItem(mmd_window, *hide_id as _);
                     if IsWindowVisible(hide) == TRUE {
                         PostMessageW(hide, BM_CLICK, WPARAM(0), LPARAM(0));
+                        log::debug!("Fold: 0x{:x}", hide_id);
                     } else {
                         let show = GetDlgItem(mmd_window, *show_id as _);
                         PostMessageW(show, BM_CLICK, WPARAM(0), LPARAM(0));
+                        log::debug!("Fold: 0x{:x}", show_id);
                     }
-                    log::debug!("Fold: 0x{:x} 0x{:x}", hide_id, show_id);
                 },
                 ItemKind::KillFocus => unsafe {
                     SetFocus(mmd_window);
@@ -129,8 +125,7 @@ impl Handler {
 
     pub fn key_up(&mut self, vk: u32) {
         self.input[vk as usize] &= 0x01;
-        self.input_keys.clear();
-        self.input_keys.push(vk);
+        self.input_keys.vk(vk);
         if let Some(ItemKind::Key(k)) = self.handler.get(&self.input_keys) {
             if let Some(ks) = self.key_states.get_mut(k) {
                 *ks = false;

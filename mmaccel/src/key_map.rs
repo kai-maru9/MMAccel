@@ -6,7 +6,7 @@ use std::io::BufReader;
 
 pub fn vk_to_string(k: u32) -> String {
     const ZERO: u32 = b'0' as _;
-    const Z : u32 = b'Z' as _;
+    const Z: u32 = b'Z' as _;
     match k {
         k @ ZERO..=Z => (k as u8 as char).to_string(),
         VK_ESCAPE => "Esc".into(),
@@ -38,12 +38,12 @@ pub fn vk_to_string(k: u32) -> String {
         VK_MULTIPLY => "Num*".into(),
         VK_DIVIDE => "Num/".into(),
         VK_DECIMAL => "Num.".into(),
-        VK_LSHIFT => "LShift".into(),
-        VK_RSHIFT => "RShift".into(),
-        VK_LCONTROL => "LCtrl".into(),
-        VK_RCONTROL => "RCtrl".into(),
-        VK_LMENU => "LAlt".into(),
-        VK_RMENU => "RAlt".into(),
+        // VK_LSHIFT => "LShift".into(),
+        // VK_RSHIFT => "RShift".into(),
+        // VK_LCONTROL => "LCtrl".into(),
+        // VK_RCONTROL => "RCtrl".into(),
+        // VK_LMENU => "LAlt".into(),
+        // VK_RMENU => "RAlt".into(),
         v @ VK_F1..=VK_F24 => format!("F{}", v - VK_F1 + 1),
         VK_OEM_MINUS => "-".into(),
         VK_OEM_PLUS => ";".into(),
@@ -76,22 +76,34 @@ impl Keys {
     pub fn with_capacity(n: usize) -> Self {
         Self(Vec::with_capacity(n))
     }
-    
+
     #[inline]
-    pub fn clear(&mut self) {
+    pub fn keyboard_state(&mut self, v: &[u8]) {
+        #[inline]
+        fn is_lr_key(k: u32) -> bool {
+            k == VK_LSHIFT
+                || k == VK_RSHIFT
+                || k == VK_LCONTROL
+                || k == VK_RCONTROL
+                || k == VK_LMENU
+                || k == VK_RMENU
+        }
+
         self.0.clear();
+        for (i, k) in v.iter().enumerate() {
+            if i <= 0xe0 && (k & 0x80) != 0 && !is_lr_key(i as _) {
+                self.0.push(i as u32);
+            }
+        }
+        self.0.sort_unstable();
     }
 
     #[inline]
-    pub fn push(&mut self, vk: u32) {
+    pub fn vk(&mut self, vk: u32) {
+        self.0.clear();
         self.0.push(vk);
     }
 
-    #[inline]
-    pub fn sort(&mut self) {
-        self.0.sort_unstable();
-    }
-    
     pub fn to_strings(&self) -> Vec<String> {
         let mut v = vec![];
         for &k in self.0.iter() {
@@ -109,12 +121,12 @@ impl KeyMap {
         let file = File::open(path)?;
         Ok(serde_json::from_reader(BufReader::new(file))?)
     }
-    
+
     #[inline]
     pub fn insert(&mut self, k: impl AsRef<str>, v: Keys) {
         self.0.insert(k.as_ref().into(), v);
     }
-    
+
     #[inline]
     pub fn get(&self, k: impl AsRef<str>) -> Option<&Keys> {
         self.0.get(k.as_ref())
@@ -124,17 +136,27 @@ impl KeyMap {
     pub fn get_mut(&mut self, k: impl AsRef<str>) -> Option<&mut Keys> {
         self.0.get_mut(k.as_ref())
     }
-    
+
     #[inline]
     pub fn iter(&self) -> std::collections::hash_map::Iter<String, Keys> {
         self.0.iter()
     }
 }
 
+impl std::iter::IntoIterator for KeyMap {
+    type Item = (String, Keys);
+    type IntoIter = std::collections::hash_map::IntoIter<String, Keys>;
+
+    #[inline]
+    fn into_iter(self) -> std::collections::hash_map::IntoIter<String, Keys> {
+        self.0.into_iter()
+    }
+}
+
 impl serde::Serialize for KeyMap {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::ser::Serializer
+        S: serde::ser::Serializer,
     {
         let mut map = serializer.serialize_map(Some(self.0.len()))?;
         for (k, v) in self.0.iter() {
@@ -199,8 +221,14 @@ impl Default for KeyMap {
         m.insert("MenuEditAnotherFramePaste", Keys::new(&[b'F' as _]));
         m.insert("MenuEditInsertEmptyFrame", Keys::new(&[b'I' as _]));
         m.insert("MenuEditDeleteVerticalFrames", Keys::new(&[b'K' as _]));
-        m.insert("MenuEditInsertEmptyFrameMorphOrLighting", Keys::new(&[b'U' as _]));
-        m.insert("MenuEditDeleteVerticalFramesMorphOrLighting", Keys::new(&[b'J' as _]));
+        m.insert(
+            "MenuEditInsertEmptyFrameMorphOrLighting",
+            Keys::new(&[b'U' as _]),
+        );
+        m.insert(
+            "MenuEditDeleteVerticalFramesMorphOrLighting",
+            Keys::new(&[b'J' as _]),
+        );
         m.insert("MenuEditCorrectBone", Keys::new(&[b'R' as _]));
         m.insert("Play", Keys::new(&[b'P' as _]));
         m.insert("ViewBottom", Keys::new(&[b'0' as _]));
@@ -227,7 +255,7 @@ mod tests {
         assert!(vk_to_string(VK_F5) == "F5");
         assert!(vk_to_string(0xdf) == "(223)");
     }
-    
+
     #[test]
     fn key_map_test() {
         let mut key_map = KeyMap(HashMap::new());

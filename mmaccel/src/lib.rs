@@ -69,7 +69,12 @@ pub extern "system" fn mmaccel_run(base_addr: usize) {
     env_logger::init();
     log::debug!("mmaccel_run");
     unsafe {
-        CONTEXT.set(Context::new()).ok();
+        if let Ok(ctx) = Context::new() {
+            CONTEXT.set(ctx).ok();
+        } else {
+            error("MMAccelの読み込みに失敗しました");
+            return;
+        }
         let user32 = image_import_desc(base_addr, b"user32.dll");
         if user32.is_err() {
             error("MMAccelの読み込みに失敗しました");

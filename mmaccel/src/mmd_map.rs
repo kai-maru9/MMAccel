@@ -19,7 +19,6 @@ pub enum ItemKind {
     KillFocus,
     FoldAll,
     UnfoldAll,
-    SsModeChange,
 }
 
 impl ItemKind {
@@ -44,7 +43,6 @@ impl ItemKind {
             "kill_focus" => Self::KillFocus,
             "fold_all" => Self::FoldAll,
             "unfold_all" => Self::UnfoldAll,
-            "ss_mode_change" => Self::SsModeChange,
             _ => return None,
         };
         Some(kind)
@@ -81,7 +79,7 @@ impl Item {
 pub struct MmdMap(Vec<(String, Item)>);
 
 impl MmdMap {
-    pub fn new(path: impl AsRef<std::path::Path>) -> std::io::Result<Self> {
+    pub fn from_file(path: impl AsRef<std::path::Path>) -> std::io::Result<Self> {
         fn items(m: &mut Vec<(String, Item)>, v: &Value) -> Option<()> {
             match v {
                 Value::Object(obj) => {
@@ -125,7 +123,7 @@ mod tests {
 
     #[test]
     fn load_mmd_map() {
-        let m = MmdMap::new("src/mmd_map.json").unwrap();
+        let m = MmdMap::from_file("src/mmd_map.json").unwrap();
         let item = &m.iter().find(|(key, _)| key == "Undo").unwrap().1;
         assert!(item.name == "元に戻す");
         assert!(matches!(item.kind, ItemKind::Button(0x190)));
