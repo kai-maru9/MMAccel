@@ -49,6 +49,14 @@ impl ItemKind {
             _ => None,
         }
     }
+
+    #[inline]
+    pub fn as_fold(&self) -> Option<(u32, u32)> {
+        match self {
+            Self::Fold(hide, show) => Some((*hide, *show)),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

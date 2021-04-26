@@ -9,6 +9,8 @@ pub struct Handler {
     input_keys: Keys,
     handler: HashMap<Keys, ItemKind>,
     key_states: HashMap<u32, bool>,
+    folds: Vec<u32>,
+    unfolds: Vec<u32>,
 }
 
 impl Handler {
@@ -19,6 +21,16 @@ impl Handler {
             .filter(|(_, item)| matches!(item.kind, mmd_map::ItemKind::Key(_)))
             .for_each(|(_, item)| {
                 key_states.insert(item.kind.as_key().unwrap(), false);
+            });
+        let mut folds = vec![];
+        let mut unfolds = vec![];
+        mmd_map
+            .iter()
+            .filter(|(_, item)| matches!(item.kind, mmd_map::ItemKind::Fold(_, _)))
+            .for_each(|(_, item)| {
+                let (hide, show) = item.kind.as_fold().unwrap();
+                folds.push(hide);
+                unfolds.push(show);
             });
         let mut handler = HashMap::new();
         for (k, v) in key_map.into_iter() {
@@ -33,11 +45,19 @@ impl Handler {
             input_keys: Keys::with_capacity(3),
             handler,
             key_states,
+            folds,
+            unfolds,
         }
     }
 
     pub fn key_down(&mut self, vk: u32, mmd_window: HWND) {
-        fn handle(item: &ItemKind, key_states: &mut HashMap<u32, bool>, mmd_window: HWND) {
+        fn handle(
+            item: &ItemKind,
+            key_states: &mut HashMap<u32, bool>,
+            folds: &[u32],
+            unfolds: &[u32],
+            mmd_window: HWND,
+        ) {
             match item {
                 ItemKind::Key(k) => {
                     if let Some(ks) = key_states.get_mut(k) {
@@ -112,19 +132,36 @@ impl Handler {
                     SetFocus(mmd_window);
                     log::debug!("KillFocus");
                 },
-                _ => {}
+                ItemKind::FoldAll => unsafe {
+                    for id in folds {
+                        let hwnd = GetDlgItem(mmd_window, *id as _);
+                        if IsWindowVisible(hwnd) == TRUE {
+                            PostMessageW(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
+                        }
+                    }
+                    log::debug!("FoldAll");
+                },
+                ItemKind::UnfoldAll => unsafe {
+                    for id in unfolds {
+                        let hwnd = GetDlgItem(mmd_window, *id as _);
+                        if IsWindowVisible(hwnd) == TRUE {
+                            PostMessageW(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
+                        }
+                    }
+                    log::debug!("UnfoldAll");
+                },
             }
         }
 
         get_keyboard_state(&mut self.input);
         self.input_keys.keyboard_state(&self.input);
         if let Some(item) = self.handler.get(&self.input_keys) {
-            handle(item, &mut self.key_states, mmd_window); 
+            handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window);
             return;
         }
         self.input_keys.vk(vk);
         if let Some(item) = self.handler.get(&self.input_keys) {
-            handle(item, &mut self.key_states, mmd_window); 
+            handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window);
         }
     }
 
