@@ -9,9 +9,7 @@ mod mmd;
 mod mmd_map;
 
 use bindings::wrapper::*;
-use bindings::Windows::Win32::{
-    Debug::*, KeyboardAndMouseInput::*, SystemServices::*, WindowsAndMessaging::*,
-};
+use bindings::Windows::Win32::{Debug::*, KeyboardAndMouseInput::*, SystemServices::*, WindowsAndMessaging::*};
 use context::*;
 use injection::*;
 use menu::*;
@@ -46,10 +44,7 @@ extern "system" fn hook_get_message(code: i32, wparam: WPARAM, lparam: LPARAM) -
         if code < 0 {
             return CallNextHookEx(HHOOK::NULL, code, wparam, lparam);
         }
-        CONTEXT
-            .get_mut()
-            .unwrap()
-            .get_message(&mut *(lparam.0 as *mut MSG));
+        CONTEXT.get_mut().unwrap().get_message(&mut *(lparam.0 as *mut MSG));
         CallNextHookEx(HHOOK::NULL, code, wparam, lparam)
     }
 }

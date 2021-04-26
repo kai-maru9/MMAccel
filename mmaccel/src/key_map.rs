@@ -81,12 +81,7 @@ impl Keys {
     pub fn keyboard_state(&mut self, v: &[u8]) {
         #[inline]
         fn is_lr_key(k: u32) -> bool {
-            k == VK_LSHIFT
-                || k == VK_RSHIFT
-                || k == VK_LCONTROL
-                || k == VK_RCONTROL
-                || k == VK_LMENU
-                || k == VK_RMENU
+            k == VK_LSHIFT || k == VK_RSHIFT || k == VK_LCONTROL || k == VK_RCONTROL || k == VK_LMENU || k == VK_RMENU
         }
 
         self.0.clear();
@@ -221,14 +216,8 @@ impl Default for KeyMap {
         m.insert("MenuEditAnotherFramePaste", Keys::new(&[b'F' as _]));
         m.insert("MenuEditInsertEmptyFrame", Keys::new(&[b'I' as _]));
         m.insert("MenuEditDeleteVerticalFrames", Keys::new(&[b'K' as _]));
-        m.insert(
-            "MenuEditInsertEmptyFrameMorphOrLighting",
-            Keys::new(&[b'U' as _]),
-        );
-        m.insert(
-            "MenuEditDeleteVerticalFramesMorphOrLighting",
-            Keys::new(&[b'J' as _]),
-        );
+        m.insert("MenuEditInsertEmptyFrameMorphOrLighting", Keys::new(&[b'U' as _]));
+        m.insert("MenuEditDeleteVerticalFramesMorphOrLighting", Keys::new(&[b'J' as _]));
         m.insert("MenuEditCorrectBone", Keys::new(&[b'R' as _]));
         m.insert("Play", Keys::new(&[b'P' as _]));
         m.insert("ViewBottom", Keys::new(&[b'0' as _]));

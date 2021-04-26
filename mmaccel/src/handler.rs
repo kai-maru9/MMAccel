@@ -81,12 +81,8 @@ impl Handler {
                     let index = SendMessageA(hwnd, CB_GETCURSEL, WPARAM(0), LPARAM(0)).0;
                     let size = SendMessageA(hwnd, CB_GETCOUNT, WPARAM(0), LPARAM(0)).0;
                     match dir {
-                        ComboDir::Prev if index >= 1 => {
-                            post_set_cur_sel(hwnd, *id, mmd_window, index - 1)
-                        }
-                        ComboDir::Next if index < size - 1 => {
-                            post_set_cur_sel(hwnd, *id, mmd_window, index + 1)
-                        }
+                        ComboDir::Prev if index >= 1 => post_set_cur_sel(hwnd, *id, mmd_window, index - 1),
+                        ComboDir::Next if index < size - 1 => post_set_cur_sel(hwnd, *id, mmd_window, index + 1),
                         _ => {}
                     }
                 },

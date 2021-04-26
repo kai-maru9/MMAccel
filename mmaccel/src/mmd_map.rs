@@ -27,14 +27,8 @@ impl ItemKind {
             "key" if a.len() == 3 => Self::Key(u32::from_str_radix(a[2].as_str()?, 16).ok()?),
             "button" if a.len() == 3 => Self::Button(u32::from_str_radix(a[2].as_str()?, 16).ok()?),
             "edit" if a.len() == 3 => Self::Edit(u32::from_str_radix(a[2].as_str()?, 16).ok()?),
-            "combo_prev" if a.len() == 3 => Self::Combo(
-                ComboDir::Prev,
-                u32::from_str_radix(a[2].as_str()?, 16).ok()?,
-            ),
-            "combo_next" if a.len() == 3 => Self::Combo(
-                ComboDir::Next,
-                u32::from_str_radix(a[2].as_str()?, 16).ok()?,
-            ),
+            "combo_prev" if a.len() == 3 => Self::Combo(ComboDir::Prev, u32::from_str_radix(a[2].as_str()?, 16).ok()?),
+            "combo_next" if a.len() == 3 => Self::Combo(ComboDir::Next, u32::from_str_radix(a[2].as_str()?, 16).ok()?),
             "menu" if a.len() == 4 => Self::Menu(a[2].as_u64()? as _, a[3].as_u64()? as _),
             "fold" if a.len() == 4 => Self::Fold(
                 u32::from_str_radix(a[2].as_str()?, 16).ok()?,
@@ -105,10 +99,7 @@ impl MmdMap {
 
     #[inline]
     pub fn get(&self, key: impl AsRef<str>) -> Option<&Item> {
-        self.0
-            .iter()
-            .find(|(k, _)| k == key.as_ref())
-            .map(|(_, item)| item)
+        self.0.iter().find(|(k, _)| k == key.as_ref()).map(|(_, item)| item)
     }
 
     #[inline]

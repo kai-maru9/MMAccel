@@ -1,9 +1,6 @@
 use crate::*;
 
-pub fn image_import_desc(
-    base_addr: usize,
-    target: &[u8],
-) -> windows::Result<IMAGE_IMPORT_DESCRIPTOR> {
+pub fn image_import_desc(base_addr: usize, target: &[u8]) -> windows::Result<IMAGE_IMPORT_DESCRIPTOR> {
     unsafe {
         let mut size = 0;
         let mut img_desc_ptr = ImageDirectoryEntryToData(
@@ -22,10 +19,7 @@ pub fn image_import_desc(
             }
             let p = (base_addr + img_desc.Name as usize) as *const u8;
             let name = std::slice::from_raw_parts(p, target.len());
-            let name = name
-                .iter()
-                .map(|c| c.to_ascii_lowercase())
-                .collect::<Vec<_>>();
+            let name = name.iter().map(|c| c.to_ascii_lowercase()).collect::<Vec<_>>();
             if name.iter().eq(target) {
                 break;
             }
@@ -42,16 +36,14 @@ pub fn inject_functions(
 ) -> windows::Result<()> {
     unsafe {
         let mut iat_ptr = (base_addr + img_desc.FirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
-        let mut int_ptr =
-            (base_addr + img_desc.Anonymous.OriginalFirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
+        let mut int_ptr = (base_addr + img_desc.Anonymous.OriginalFirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
         while iat_ptr.as_ref().unwrap().u1.Function != 0 {
             let mut iat = &mut *iat_ptr;
             let int = &*int_ptr;
             if (int.u1.Ordinal & 0x8000000000000000) != 0 {
                 continue;
             }
-            let name_ptr =
-                (base_addr + int.u1.AddressOfData as usize) as *const IMAGE_IMPORT_BY_NAME;
+            let name_ptr = (base_addr + int.u1.AddressOfData as usize) as *const IMAGE_IMPORT_BY_NAME;
             for &(function_name, fp) in functions.iter() {
                 let name = std::slice::from_raw_parts(
                     name_ptr.as_ref().unwrap().Name.as_ptr() as *const u8,

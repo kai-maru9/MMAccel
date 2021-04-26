@@ -92,9 +92,7 @@ impl Menu {
             let name = to_wchar("MMAccel");
             let mut info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as _,
-                fMask: MENU_ITEM_MASK::MIIM_TYPE
-                    | MENU_ITEM_MASK::MIIM_SUBMENU
-                    | MENU_ITEM_MASK::MIIM_ID,
+                fMask: MENU_ITEM_MASK::MIIM_TYPE | MENU_ITEM_MASK::MIIM_SUBMENU | MENU_ITEM_MASK::MIIM_ID,
                 fType: MENU_ITEM_TYPE::MFT_STRING,
                 dwTypeData: PWSTR(name.as_ptr() as _),
                 hSubMenu: m,

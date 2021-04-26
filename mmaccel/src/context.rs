@@ -68,12 +68,7 @@ impl Context {
                 log::debug!("Created MainWindow");
                 self.mmd_window = Some(MmdWindow::new(data.hwnd));
             }
-            WM_DESTROY
-                if self
-                    .mmd_window
-                    .as_ref()
-                    .map_or(false, |mw| mw.window == data.hwnd) =>
-            {
+            WM_DESTROY if self.mmd_window.as_ref().map_or(false, |mw| mw.window == data.hwnd) => {
                 log::debug!("Destroyed MainWindow");
             }
             _ => {}
@@ -93,10 +88,8 @@ impl Context {
                 }
             }
             WM_KEYDOWN | WM_SYSKEYDOWN => {
-                self.handler.key_down(
-                    data.wParam.0 as u32,
-                    self.mmd_window.as_ref().unwrap().window,
-                );
+                self.handler
+                    .key_down(data.wParam.0 as u32, self.mmd_window.as_ref().unwrap().window);
             }
             WM_KEYUP | WM_SYSKEYUP => {
                 self.handler.key_up(data.wParam.0 as u32);
