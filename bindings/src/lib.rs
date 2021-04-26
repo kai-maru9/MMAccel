@@ -41,6 +41,7 @@ pub mod wrapper {
     }
 
     pub fn message_box(
+        hwnd: Option<HWND>,
         text: impl AsRef<str>,
         caption: impl AsRef<str>,
         style: MESSAGEBOX_STYLE,
@@ -49,7 +50,7 @@ pub mod wrapper {
             let text = to_wchar(text.as_ref());
             let caption = to_wchar(caption.as_ref());
             MessageBoxW(
-                HWND::NULL,
+                hwnd.unwrap_or(HWND::NULL),
                 PWSTR(text.as_ptr() as _),
                 PWSTR(caption.as_ptr() as _),
                 style,

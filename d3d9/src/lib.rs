@@ -9,6 +9,7 @@ static mut MMACCEL: OnceCell<Library> = OnceCell::new();
 
 fn error(msg: &str) {
     message_box(
+        None,
         msg,
         "d3d9.dllエラー",
         MESSAGEBOX_STYLE::MB_OK | MESSAGEBOX_STYLE::MB_ICONERROR,
@@ -19,9 +20,7 @@ fn error(msg: &str) {
 fn mmaccel_run(base_addr: usize) {
     unsafe {
         if let Some(mmaccel) = MMACCEL.get() {
-            let f = mmaccel
-                .get::<unsafe fn(usize)>(b"mmaccel_run")
-                .unwrap();
+            let f = mmaccel.get::<unsafe fn(usize)>(b"mmaccel_run").unwrap();
             f(base_addr)
         }
     }

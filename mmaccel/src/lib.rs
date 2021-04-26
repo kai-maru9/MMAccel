@@ -1,10 +1,12 @@
 #![allow(clippy::fn_to_numeric_cast)]
 
 mod context;
+mod handler;
 mod injection;
-mod mmd_map;
+pub mod key_map;
 mod menu;
 mod mmd;
+mod mmd_map;
 
 use bindings::wrapper::*;
 use bindings::Windows::Win32::{
@@ -19,6 +21,7 @@ static mut CONTEXT: OnceCell<Context> = OnceCell::new();
 
 fn error(msg: &str) {
     message_box(
+        None,
         msg,
         "MMAccelエラー",
         MESSAGEBOX_STYLE::MB_OK | MESSAGEBOX_STYLE::MB_ICONERROR,
@@ -53,8 +56,8 @@ extern "system" fn hook_get_message(code: i32, wparam: WPARAM, lparam: LPARAM) -
 
 extern "system" fn proxy_get_key_state(vk: i32) -> i16 {
     unsafe {
-        if let Some(ret) = CONTEXT.get().unwrap().get_key_state(vk as u32) {
-            ret
+        if let Some(ret) = CONTEXT.get().unwrap().get_key_state(vk as _) {
+            ret as _
         } else {
             GetKeyState(vk)
         }
