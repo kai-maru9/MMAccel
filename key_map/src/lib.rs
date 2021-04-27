@@ -1,4 +1,4 @@
-use crate::*;
+use bindings::Windows::Win32::WindowsAndMessaging::*;
 use serde::ser::SerializeMap;
 use std::collections::HashMap;
 use std::fs::File;
@@ -66,7 +66,12 @@ pub struct Keys(Vec<u32>);
 
 impl Keys {
     #[inline]
-    pub fn new(v: &[u32]) -> Self {
+    pub fn new() -> Self {
+        Self(vec![])
+    }
+
+    #[inline]
+    pub fn from_slice(v: &[u32]) -> Self {
         let mut v = v.to_vec();
         v.sort_unstable();
         Self(v)
@@ -105,6 +110,12 @@ impl Keys {
             v.push(vk_to_string(k));
         }
         v
+    }
+}
+
+impl Default for Keys {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -194,42 +205,48 @@ impl<'de> serde::Deserialize<'de> for KeyMap {
 impl Default for KeyMap {
     fn default() -> Self {
         let mut m = Self(HashMap::new());
-        m.insert("Undo", Keys::new(&[VK_CONTROL, b'Z' as _]));
-        m.insert("Redo", Keys::new(&[VK_CONTROL, b'X' as _]));
-        m.insert("BoneSelect", Keys::new(&[b'C' as _]));
-        m.insert("BoneRotate", Keys::new(&[b'X' as _]));
-        m.insert("BoneMove", Keys::new(&[b'Z' as _]));
-        m.insert("BoneAllSelect", Keys::new(&[b'A' as _]));
-        m.insert("BoneUnregisterSelect", Keys::new(&[b'S' as _]));
-        m.insert("MenuViewHalfTransparency", Keys::new(&[b'V' as _]));
-        m.insert("FramePrev", Keys::new(&[VK_LEFT]));
-        m.insert("FrameNext", Keys::new(&[VK_RIGHT]));
-        m.insert("MainChangeEditor", Keys::new(&[VK_TAB]));
-        m.insert("FrameRegister", Keys::new(&[VK_RETURN]));
-        m.insert("FrameKeyPrev", Keys::new(&[VK_CONTROL, VK_LEFT]));
-        m.insert("FrameKeyNext", Keys::new(&[VK_CONTROL, VK_RIGHT]));
-        m.insert("BonePrev", Keys::new(&[VK_UP]));
-        m.insert("BoneNext", Keys::new(&[VK_DOWN]));
-        m.insert("KeyCopy", Keys::new(&[VK_CONTROL, b'C' as _]));
-        m.insert("KeyPaste", Keys::new(&[VK_CONTROL, b'V' as _]));
-        m.insert("MenuBackgroundBlack", Keys::new(&[b'B' as _]));
-        m.insert("MenuEditCenterBias", Keys::new(&[b'D' as _]));
-        m.insert("ChangeSpace", Keys::new(&[b'L' as _]));
-        m.insert("MenuEditAnotherFramePaste", Keys::new(&[b'F' as _]));
-        m.insert("MenuEditInsertEmptyFrame", Keys::new(&[b'I' as _]));
-        m.insert("MenuEditDeleteVerticalFrames", Keys::new(&[b'K' as _]));
-        m.insert("MenuEditInsertEmptyFrameMorphOrLighting", Keys::new(&[b'U' as _]));
-        m.insert("MenuEditDeleteVerticalFramesMorphOrLighting", Keys::new(&[b'J' as _]));
-        m.insert("MenuEditCorrectBone", Keys::new(&[b'R' as _]));
-        m.insert("Play", Keys::new(&[b'P' as _]));
-        m.insert("ViewBottom", Keys::new(&[b'0' as _]));
-        m.insert("ViewFront", Keys::new(&[b'2' as _]));
-        m.insert("ViewLeft", Keys::new(&[b'4' as _]));
-        m.insert("ViewTop", Keys::new(&[b'5' as _]));
-        m.insert("ViewRight", Keys::new(&[b'6' as _]));
-        m.insert("ViewBack", Keys::new(&[b'8' as _]));
-        m.insert("MenuFileSave", Keys::new(&[VK_CONTROL, b'S' as _]));
-        m.insert("InterpolationAuto", Keys::new(&[VK_OEM_6]));
+        m.insert("Undo", Keys::from_slice(&[VK_CONTROL, b'Z' as _]));
+        m.insert("Redo", Keys::from_slice(&[VK_CONTROL, b'X' as _]));
+        m.insert("BoneSelect", Keys::from_slice(&[b'C' as _]));
+        m.insert("BoneRotate", Keys::from_slice(&[b'X' as _]));
+        m.insert("BoneMove", Keys::from_slice(&[b'Z' as _]));
+        m.insert("BoneAllSelect", Keys::from_slice(&[b'A' as _]));
+        m.insert("BoneUnregisterSelect", Keys::from_slice(&[b'S' as _]));
+        m.insert("MenuViewHalfTransparency", Keys::from_slice(&[b'V' as _]));
+        m.insert("FramePrev", Keys::from_slice(&[VK_LEFT]));
+        m.insert("FrameNext", Keys::from_slice(&[VK_RIGHT]));
+        m.insert("MainChangeEditor", Keys::from_slice(&[VK_TAB]));
+        m.insert("FrameRegister", Keys::from_slice(&[VK_RETURN]));
+        m.insert("FrameKeyPrev", Keys::from_slice(&[VK_CONTROL, VK_LEFT]));
+        m.insert("FrameKeyNext", Keys::from_slice(&[VK_CONTROL, VK_RIGHT]));
+        m.insert("BonePrev", Keys::from_slice(&[VK_UP]));
+        m.insert("BoneNext", Keys::from_slice(&[VK_DOWN]));
+        m.insert("KeyCopy", Keys::from_slice(&[VK_CONTROL, b'C' as _]));
+        m.insert("KeyPaste", Keys::from_slice(&[VK_CONTROL, b'V' as _]));
+        m.insert("MenuBackgroundBlack", Keys::from_slice(&[b'B' as _]));
+        m.insert("MenuEditCenterBias", Keys::from_slice(&[b'D' as _]));
+        m.insert("ChangeSpace", Keys::from_slice(&[b'L' as _]));
+        m.insert("MenuEditAnotherFramePaste", Keys::from_slice(&[b'F' as _]));
+        m.insert("MenuEditInsertEmptyFrame", Keys::from_slice(&[b'I' as _]));
+        m.insert("MenuEditDeleteVerticalFrames", Keys::from_slice(&[b'K' as _]));
+        m.insert(
+            "MenuEditInsertEmptyFrameMorphOrLighting",
+            Keys::from_slice(&[b'U' as _]),
+        );
+        m.insert(
+            "MenuEditDeleteVerticalFramesMorphOrLighting",
+            Keys::from_slice(&[b'J' as _]),
+        );
+        m.insert("MenuEditCorrectBone", Keys::from_slice(&[b'R' as _]));
+        m.insert("Play", Keys::from_slice(&[b'P' as _]));
+        m.insert("ViewBottom", Keys::from_slice(&[b'0' as _]));
+        m.insert("ViewFront", Keys::from_slice(&[b'2' as _]));
+        m.insert("ViewLeft", Keys::from_slice(&[b'4' as _]));
+        m.insert("ViewTop", Keys::from_slice(&[b'5' as _]));
+        m.insert("ViewRight", Keys::from_slice(&[b'6' as _]));
+        m.insert("ViewBack", Keys::from_slice(&[b'8' as _]));
+        m.insert("MenuFileSave", Keys::from_slice(&[VK_CONTROL, b'S' as _]));
+        m.insert("InterpolationAuto", Keys::from_slice(&[VK_OEM_6]));
         m
     }
 }

@@ -3,7 +3,6 @@
 mod context;
 mod handler;
 mod injection;
-pub mod key_map;
 mod menu;
 mod mmd;
 mod mmd_map;

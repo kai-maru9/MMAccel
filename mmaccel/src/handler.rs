@@ -1,7 +1,6 @@
-use crate::key_map::Keys;
-use crate::key_map::*;
 use crate::mmd_map::*;
 use crate::*;
+use key_map::*;
 use std::collections::HashMap;
 
 pub struct Handler {
@@ -188,9 +187,9 @@ mod tests {
 
     #[test]
     fn keys_eq() {
-        let a = Keys::new(&[VK_LEFT, VK_CONTROL]);
-        let b = Keys::new(&[VK_RIGHT, VK_CONTROL]);
-        let c = Keys::new(&[VK_LEFT, VK_CONTROL]);
+        let a = Keys::from_slice(&[VK_LEFT, VK_CONTROL]);
+        let b = Keys::from_slice(&[VK_RIGHT, VK_CONTROL]);
+        let c = Keys::from_slice(&[VK_LEFT, VK_CONTROL]);
         assert!(a == a);
         assert!(a != b);
         assert!(a == c);

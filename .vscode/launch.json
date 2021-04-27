@@ -28,6 +28,20 @@
 			"console": "internalConsole",
 			"preLaunchTask": "release copy",
 			"internalConsoleOptions": "openOnSessionStart",
-		}
+		},
+		{
+			"name": "run key_config debug",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/MikuMikuDance_v932x64/MMAccel/key_config.exe",
+			"args": [],
+			"cwd": "${workspaceFolder}/MikuMikuDance_v932x64/MMAccel",
+			"environment": [
+				{ "name": "RUST_LOG", "value": "debug" },
+			],
+			"console": "internalConsole",
+			"preLaunchTask": "debug copy",
+			"internalConsoleOptions": "openOnSessionStart",
+		},
 	]
 }

@@ -23,9 +23,12 @@ fn main() {
             IMAGE_IMPORT_BY_NAME,
             PAGE_TYPE,
             E_FAIL,
+            LISTBOX_STYLE,
         },
         Windows::Win32::Shell::{
             SHGetFolderPathW,
+            SetWindowSubclass,
+            DefSubclassProc,
             CSIDL_SYSTEM,
         },
         Windows::Win32::Debug::{
@@ -38,9 +41,7 @@ fn main() {
             D3DMATRIX,
         },
         Windows::Win32::HiDpi::*,
-        Windows::Win32::Gdi::{
-            CreateFontA,
-            CreateFontW,
-        }
+        Windows::Win32::Gdi::*,
+        Windows::Win32::Controls::*,
     );
 }
