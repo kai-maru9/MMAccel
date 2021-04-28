@@ -48,12 +48,12 @@ impl Context {
         let handler = Handler::new(mmd_map, key_map);
         Ok(Self {
             _call_window_proc_ret: HookHandle::new(
-                SetWindowsHookEx_idHook::WH_CALLWNDPROCRET,
+                WINDOWS_HOOK_ID::WH_CALLWNDPROCRET,
                 Some(hook_call_window_proc_ret),
                 get_current_thread_id(),
             ),
             _get_message_handle: HookHandle::new(
-                SetWindowsHookEx_idHook::WH_GETMESSAGE,
+                WINDOWS_HOOK_ID::WH_GETMESSAGE,
                 Some(hook_get_message),
                 get_current_thread_id(),
             ),

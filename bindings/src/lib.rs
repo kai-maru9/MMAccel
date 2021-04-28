@@ -62,7 +62,7 @@ pub mod wrapper {
     pub struct HookHandle(HHOOK);
 
     impl HookHandle {
-        pub fn new(id: SetWindowsHookEx_idHook, f: Option<HOOKPROC>, thread_id: u32) -> Self {
+        pub fn new(id: WINDOWS_HOOK_ID, f: Option<HOOKPROC>, thread_id: u32) -> Self {
             unsafe { Self(SetWindowsHookExA(id, f, HINSTANCE::NULL, thread_id)) }
         }
     }
@@ -92,7 +92,7 @@ pub mod wrapper {
 
     #[inline]
     pub fn get_last_error() -> windows::HRESULT {
-        unsafe { windows::HRESULT::from_win32(GetLastError()) }
+        unsafe { windows::HRESULT::from_win32(GetLastError().0) }
     }
 
     #[inline]
@@ -135,4 +135,6 @@ pub mod wrapper {
             String::from_utf16_lossy(&buffer[..size as usize])
         }
     }
+
+    pub const LVN_ITEMCHANGED: u32 = -101i32 as u32;
 }

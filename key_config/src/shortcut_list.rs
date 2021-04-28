@@ -37,17 +37,20 @@ impl ShortcutList {
                 return Err(get_last_error().into());
             }
             let ex_style = SendMessageW(hwnd, LVM_GETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(0)).0 as u32;
-            let ex_style = ex_style | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_AUTOSIZECOLUMNS;
+            let ex_style =
+                ex_style | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_AUTOSIZECOLUMNS;
             SendMessageW(hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(ex_style as _));
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_mask::LVCF_WIDTH | LVCOLUMNW_mask::LVCF_FMT,
-                fmt: LVCOLUMNW_fmt::LVCFMT_LEFT | LVCOLUMNW_fmt::LVCFMT_FIXED_WIDTH,
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT,
+                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT | LVCOLUMNW_FORMAT::LVCFMT_FIXED_WIDTH,
                 cx: size.width / 2,
                 ..Default::default()
             };
             for i in 0..2 {
                 SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(i), LPARAM(&column as *const _ as _));
             }
+            let theme = to_wchar("Explorer");
+            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok()?;
             Ok(Self { hwnd })
         }
     }
@@ -55,6 +58,28 @@ impl ShortcutList {
     #[inline]
     pub fn size(&self) -> usize {
         unsafe { SendMessageW(self.hwnd, LVM_GETITEMCOUNT, WPARAM(0), LPARAM(0)).0 as _ }
+    }
+
+    #[inline]
+    pub fn keys_rect(&self, index: usize) -> Option<RECT> {
+        unsafe {
+            let mut rc = RECT {
+                left: LVIR_BOUNDS as _,
+                top: 1,
+                ..Default::default()
+            };
+            let ret = SendMessageW(
+                self.hwnd,
+                LVM_GETSUBITEMRECT,
+                WPARAM(index as _),
+                LPARAM(&mut rc as *mut _ as _),
+            );
+            if ret == LRESULT(0) {
+                None
+            } else {
+                Some(rc)
+            }
+        }
     }
 
     #[inline]

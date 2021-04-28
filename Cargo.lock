@@ -37,7 +37,7 @@ name = "bindings"
 version = "0.1.0"
 dependencies = [
  "serde",
- "windows",
+ "windows 0.9.0",
 ]
 
 [[package]]
@@ -126,7 +126,7 @@ dependencies = [
  "once_cell",
  "serde",
  "serde_json",
- "windows",
+ "windows 0.9.0",
  "wita",
 ]
 
@@ -141,9 +141,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.93"
+version = "0.2.94"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9385f66bf6105b241aa65a61cb923ef20efc665cb9f9bb50ac2f0c4b7f378d41"
+checksum = "18794a8ad5b29321f790b55d93dfba91e125cb1a9edbd4f8e3150acc771c1a5e"
 
 [[package]]
 name = "libloading"
@@ -182,7 +182,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "windows",
+ "windows 0.9.0",
 ]
 
 [[package]]
@@ -350,9 +350,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.70"
+version = "1.0.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9505f307c872bab8eb46f77ae357c8eba1fdacead58ee5a850116b1d7f82883"
+checksum = "ad184cc9470f9117b2ac6817bfe297307418819ba40552f9b3846f05c33d5373"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -452,8 +452,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e50fd72a86bac7e21de2ce132629b7921e57b75ed607025f850a97a7ce2aec3"
 dependencies = [
  "const-sha1",
- "windows_gen",
- "windows_macros",
+ "windows_gen 0.8.0",
+ "windows_macros 0.8.0",
+]
+
+[[package]]
+name = "windows"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b75e24d367298026d877002bfdd9ded41fac90f9db8042dc104a0b2dd374d94"
+dependencies = [
+ "const-sha1",
+ "windows_gen 0.9.0",
+ "windows_macros 0.9.0",
 ]
 
 [[package]]
@@ -466,13 +477,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "windows_gen"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc82bcbe88dfc6cb0f55f4574ded610211de0542a638c724feebc5d0b15c60cd"
+dependencies = [
+ "syn",
+]
+
+[[package]]
 name = "windows_macros"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25eb153f12764a88cd8f6898ba9b4b03b57704b26289a15c66495923d23e4208"
 dependencies = [
  "syn",
- "windows_gen",
+ "windows_gen 0.8.0",
+]
+
+[[package]]
+name = "windows_macros"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296ab6f4ffa8faa64ee6d6cfb27541890056f7ed0fd29b4c660dab7a1a9410ff"
+dependencies = [
+ "syn",
+ "windows_gen 0.9.0",
 ]
 
 [[package]]
@@ -493,5 +523,5 @@ dependencies = [
  "log",
  "num",
  "raw-window-handle",
- "windows",
+ "windows 0.8.0",
 ]

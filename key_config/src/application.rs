@@ -50,21 +50,20 @@ impl KeyTable {
                     .and_then(|a| a.as_array())
                     .and_then(|a| a[0].as_str())
                     .ok_or(INVALID_DATA)?;
-                v.push(Item{ 
+                v.push(Item {
                     id: id.to_string(),
-                    name: name.to_string(), 
-                    keys: Keys::new()
+                    name: name.to_string(),
+                    keys: Keys::new(),
                 });
-                println!("{}", id);
             }
             table.push(Category {
-                name: category, 
+                name: category,
                 items: v,
             });
         }
         Ok(Self(table))
     }
-    
+
     fn iter(&self) -> std::slice::Iter<Category> {
         self.0.iter()
     }
@@ -82,6 +81,7 @@ pub struct Application {
     main_window: wita::Window,
     side_menu: SideMenu,
     shortcut_list: ShortcutList,
+    editor: Editor,
     key_table: KeyTable,
 }
 
@@ -100,12 +100,23 @@ impl Application {
         key_table.iter().for_each(|cat| side_menu.push(&cat.name));
         side_menu.set_index(0);
         let mut shortcut_list = ShortcutList::new(&main_window, (170, 10), (455, 460))?;
-        key_table[0].items.iter().for_each(|item| shortcut_list.push(&item.name));
+        key_table[0]
+            .items
+            .iter()
+            .for_each(|item| shortcut_list.push(&item.name));
+        let mut editor = Editor::new(&main_window)?;
+        editor.show(RECT {
+            left: 100,
+            top: 100,
+            right: 100 + 150,
+            bottom: 100 + 40,
+        });
         let mut app = Box::new(Self {
             main_window,
             side_menu,
             shortcut_list,
             key_table,
+            editor,
         });
         unsafe {
             let hwnd = HWND(app.main_window.raw_handle() as _);
@@ -113,6 +124,15 @@ impl Application {
             SetWindowSubclass(hwnd, Some(main_window_proc), app_ptr as _, app_ptr as _).ok()?;
         }
         Ok(app)
+    }
+
+    fn update_shortcut_list(&mut self, side_menu: &NMLISTVIEW) {
+        if side_menu.uNewState & LVIS_SELECTED != 0 {
+            self.shortcut_list.clear();
+            for item in self.key_table[self.side_menu.current_index()].items.iter() {
+                self.shortcut_list.push(&item.name);
+            }
+        }
     }
 }
 
@@ -129,13 +149,10 @@ extern "system" fn main_window_proc(
     unsafe {
         let app = (data_ptr as *mut Application).as_mut().unwrap();
         match msg {
-            WM_COMMAND => {
-                if app.side_menu.handle() == HWND(lparam.0) && ((wparam.0 >> 16) & 0xffff) as u32 == LBN_SELCHANGE {
-                    app.shortcut_list.clear();
-                    for item in app.key_table[app.side_menu.current_index()].items.iter() {
-                        app.shortcut_list.push(&item.name);
-                    }
-                    app.main_window.redraw();
+            WM_NOTIFY => {
+                let nmhdr = (lparam.0 as *const NMHDR).as_ref().unwrap();
+                if nmhdr.hwndFrom == app.side_menu.handle() && nmhdr.code == LVN_ITEMCHANGED {
+                    app.update_shortcut_list((lparam.0 as *const NMLISTVIEW).as_ref().unwrap());
                 }
                 LRESULT(0)
             }
@@ -145,7 +162,7 @@ extern "system" fn main_window_proc(
                 FillRect(
                     HDC(wparam.0 as _),
                     &rc,
-                    HBRUSH(GetStockObject(GetStockObject_iFlags(GetSysColor_nIndexFlags::COLOR_BTNFACE.0 + 1)).0),
+                    HBRUSH(GetStockObject(GET_STOCK_OBJECT_FLAGS(SYS_COLOR_INDEX::COLOR_BTNFACE.0 + 1)).0 as _),
                 );
                 LRESULT(1)
             }
