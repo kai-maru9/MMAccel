@@ -4,7 +4,7 @@ use crate::*;
 struct Item {
     id: String,
     name: String,
-    keys: Keys,
+    keys: Option<Keys>,
 }
 
 #[derive(Debug)]
@@ -20,6 +20,7 @@ impl KeyTable {
     fn from_file(
         mmd_map_path: impl AsRef<std::path::Path>,
         order_path: impl AsRef<std::path::Path>,
+        key_map_path: impl AsRef<std::path::Path>,
     ) -> std::io::Result<Self> {
         const INVALID_DATA: std::io::ErrorKind = std::io::ErrorKind::InvalidData;
         let mmd_map: serde_json::Value = {
@@ -28,6 +29,10 @@ impl KeyTable {
         };
         let order: serde_json::Value = {
             let file = std::fs::File::open(order_path)?;
+            serde_json::from_reader(std::io::BufReader::new(file))?
+        };
+        let key_map: serde_json::Value = {
+            let file = std::fs::File::open(key_map_path)?;
             serde_json::from_reader(std::io::BufReader::new(file))?
         };
         let mmd_map = mmd_map.as_object().ok_or(INVALID_DATA)?;
@@ -50,10 +55,15 @@ impl KeyTable {
                     .and_then(|a| a.as_array())
                     .and_then(|a| a[0].as_str())
                     .ok_or(INVALID_DATA)?;
+                let keys = key_map.get(id).and_then(|v| v.as_array()).and_then(|a| {
+                    a.iter()
+                        .map(|v| v.as_u64().map(|v| v as u32))
+                        .collect::<Option<Vec<_>>>()
+                }).map(|a| Keys::from_slice(&a));
                 v.push(Item {
                     id: id.to_string(),
                     name: name.to_string(),
-                    keys: Keys::new(),
+                    keys,
                 });
             }
             table.push(Category {
@@ -87,7 +97,7 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> anyhow::Result<Box<Self>> {
-        let key_table = KeyTable::from_file("mmd_map.json", "order.json")?;
+        let key_table = KeyTable::from_file("mmd_map.json", "order.json", "key_map.json")?;
         let main_window = wita::WindowBuilder::new()
             .title("MMAccel キー設定")
             .style(
@@ -103,14 +113,8 @@ impl Application {
         key_table[0]
             .items
             .iter()
-            .for_each(|item| shortcut_list.push(&item.name));
-        let mut editor = Editor::new(&main_window)?;
-        editor.show(RECT {
-            left: 100,
-            top: 100,
-            right: 100 + 150,
-            bottom: 100 + 40,
-        });
+            .for_each(|item| shortcut_list.push(&item.name, item.keys.as_ref()));
+        let editor = Editor::new(shortcut_list.handle())?;
         let mut app = Box::new(Self {
             main_window,
             side_menu,
@@ -124,15 +128,6 @@ impl Application {
             SetWindowSubclass(hwnd, Some(main_window_proc), app_ptr as _, app_ptr as _).ok()?;
         }
         Ok(app)
-    }
-
-    fn update_shortcut_list(&mut self, side_menu: &NMLISTVIEW) {
-        if side_menu.uNewState & LVIS_SELECTED != 0 {
-            self.shortcut_list.clear();
-            for item in self.key_table[self.side_menu.current_index()].items.iter() {
-                self.shortcut_list.push(&item.name);
-            }
-        }
     }
 }
 
@@ -152,7 +147,32 @@ extern "system" fn main_window_proc(
             WM_NOTIFY => {
                 let nmhdr = (lparam.0 as *const NMHDR).as_ref().unwrap();
                 if nmhdr.hwndFrom == app.side_menu.handle() && nmhdr.code == LVN_ITEMCHANGED {
-                    app.update_shortcut_list((lparam.0 as *const NMLISTVIEW).as_ref().unwrap());
+                    let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
+                    if nlv.uNewState & LVIS_SELECTED != 0 {
+                        app.shortcut_list.clear();
+                        for item in app.key_table[app.side_menu.current_index()].items.iter() {
+                            app.shortcut_list.push(&item.name, item.keys.as_ref());
+                        }
+                    }
+                } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
+                    match nmhdr.code {
+                        NM_DBLCLK => {
+                            let nia = (lparam.0 as *const NMITEMACTIVATE).as_ref().unwrap();
+                            if let Some(rc) = app.shortcut_list.keys_rect(nia.iItem as _) {
+                                app.editor.show(&rc);
+                            }
+                        }
+                        LVN_ITEMCHANGED => {
+                            let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
+                            let state = (nlv.uChanged & LVIF_STATE) != 0
+                                && (nlv.uOldState & LVIS_SELECTED) != 0
+                                && (nlv.uNewState & LVIS_SELECTED) == 0;
+                            if state {
+                                app.editor.hide();
+                            }
+                        }
+                        _ => {}
+                    }
                 }
                 LRESULT(0)
             }

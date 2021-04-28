@@ -8,8 +8,8 @@ mod side_menu;
 use application::*;
 use bindings::wrapper::*;
 use bindings::Windows::Win32::{
-    Controls::*, DisplayDevices::*, Gdi::*, HiDpi::*, MenusAndResources::*, Shell::*, SystemServices::*,
-    WindowsAndMessaging::*,
+    Controls::*, DisplayDevices::*, Gdi::*, HiDpi::*, KeyboardAndMouseInput::*, MenusAndResources::*, Shell::*,
+    SystemServices::*, WindowsAndMessaging::*,
 };
 use editor::*;
 use key_map::Keys;

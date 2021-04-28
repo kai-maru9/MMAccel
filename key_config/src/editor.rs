@@ -7,7 +7,7 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new(parent: &wita::Window) -> windows::Result<Self> {
+    pub fn new(parent: HWND) -> windows::Result<Self> {
         let class_name = to_wchar("EDIT");
         unsafe {
             let hwnd = CreateWindowExW(
@@ -19,7 +19,7 @@ impl Editor {
                 0,
                 1,
                 1,
-                HWND(parent.raw_handle() as _),
+                parent,
                 HMENU::NULL,
                 HINSTANCE::NULL,
                 std::ptr::null_mut(),
@@ -29,7 +29,16 @@ impl Editor {
             let mut font = HFONT::NULL;
             if theme != 0 {
                 let mut log_font = LOGFONTW::default();
-                match GetThemeFont(theme, HDC::NULL, 4, 0, THEME_PROPERTY_SYMBOL_ID::TMT_FONT.0 as _, &mut log_font).ok() {
+                let ret = GetThemeFont(
+                    theme,
+                    HDC::NULL,
+                    4,
+                    0,
+                    THEME_PROPERTY_SYMBOL_ID::TMT_FONT.0 as _,
+                    &mut log_font,
+                )
+                .ok();
+                match ret {
                     Ok(_) => {
                         font = CreateFontIndirectW(&log_font);
                         SendMessageW(hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
@@ -45,22 +54,17 @@ impl Editor {
         }
     }
 
-    pub fn show(&mut self, rc: RECT) {
+    pub fn show(&mut self, rc: &RECT) {
         unsafe {
-            MoveWindow(
-                self.hwnd,
-                rc.left,
-                rc.top,
-                rc.right - rc.left,
-                rc.bottom - rc.top,
-                FALSE,
-            );
+            MoveWindow(self.hwnd, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
             ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_SHOW);
+            SetFocus(self.hwnd);
         }
     }
 
     pub fn hide(&mut self) {
         unsafe {
+            SetFocus(GetParent(self.hwnd));
             ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_HIDE);
         }
     }

@@ -136,5 +136,8 @@ pub mod wrapper {
         }
     }
 
-    pub const LVN_ITEMCHANGED: u32 = -101i32 as u32;
+    pub const LVN_ITEMCHANGED: u32 = -101i32 as _;
+    pub const LVN_ITEMACTIVATE: u32 = -114i32 as _;
+    pub const NM_CLICK: u32 = -2i32 as _;
+    pub const NM_DBLCLK: u32 = -3i32 as _;
 }
