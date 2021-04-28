@@ -55,11 +55,15 @@ impl KeyTable {
                     .and_then(|a| a.as_array())
                     .and_then(|a| a[0].as_str())
                     .ok_or(INVALID_DATA)?;
-                let keys = key_map.get(id).and_then(|v| v.as_array()).and_then(|a| {
-                    a.iter()
-                        .map(|v| v.as_u64().map(|v| v as u32))
-                        .collect::<Option<Vec<_>>>()
-                }).map(|a| Keys::from_slice(&a));
+                let keys = key_map
+                    .get(id)
+                    .and_then(|v| v.as_array())
+                    .and_then(|a| {
+                        a.iter()
+                            .map(|v| v.as_u64().map(|v| v as u32))
+                            .collect::<Option<Vec<_>>>()
+                    })
+                    .map(|a| Keys::from_slice(&a));
                 v.push(Item {
                     id: id.to_string(),
                     name: name.to_string(),
@@ -91,7 +95,7 @@ pub struct Application {
     main_window: wita::Window,
     side_menu: SideMenu,
     shortcut_list: ShortcutList,
-    editor: Editor,
+    editor: Box<Editor>,
     key_table: KeyTable,
 }
 
@@ -133,7 +137,7 @@ impl Application {
 
 impl wita::EventHandler for Box<Application> {}
 
-extern "system" fn main_window_proc(
+unsafe extern "system" fn main_window_proc(
     hwnd: HWND,
     msg: u32,
     wparam: WPARAM,
@@ -141,52 +145,55 @@ extern "system" fn main_window_proc(
     _id: usize,
     data_ptr: usize,
 ) -> LRESULT {
-    unsafe {
-        let app = (data_ptr as *mut Application).as_mut().unwrap();
-        match msg {
-            WM_NOTIFY => {
-                let nmhdr = (lparam.0 as *const NMHDR).as_ref().unwrap();
-                if nmhdr.hwndFrom == app.side_menu.handle() && nmhdr.code == LVN_ITEMCHANGED {
-                    let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
-                    if nlv.uNewState & LVIS_SELECTED != 0 {
-                        app.shortcut_list.clear();
-                        for item in app.key_table[app.side_menu.current_index()].items.iter() {
-                            app.shortcut_list.push(&item.name, item.keys.as_ref());
-                        }
-                    }
-                } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
-                    match nmhdr.code {
-                        NM_DBLCLK => {
-                            let nia = (lparam.0 as *const NMITEMACTIVATE).as_ref().unwrap();
-                            if let Some(rc) = app.shortcut_list.keys_rect(nia.iItem as _) {
-                                app.editor.show(&rc);
-                            }
-                        }
-                        LVN_ITEMCHANGED => {
-                            let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
-                            let state = (nlv.uChanged & LVIF_STATE) != 0
-                                && (nlv.uOldState & LVIS_SELECTED) != 0
-                                && (nlv.uNewState & LVIS_SELECTED) == 0;
-                            if state {
-                                app.editor.hide();
-                            }
-                        }
-                        _ => {}
+    let app = (data_ptr as *mut Application).as_mut().unwrap();
+    match msg {
+        WM_NOTIFY => {
+            let nmhdr = (lparam.0 as *const NMHDR).as_ref().unwrap();
+            if nmhdr.hwndFrom == app.side_menu.handle() && nmhdr.code == LVN_ITEMCHANGED {
+                let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
+                if nlv.uNewState & LVIS_SELECTED != 0 {
+                    app.shortcut_list.clear();
+                    for item in app.key_table[app.side_menu.current_index()].items.iter() {
+                        app.shortcut_list.push(&item.name, item.keys.as_ref());
                     }
                 }
-                LRESULT(0)
+            } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
+                match nmhdr.code {
+                    NM_DBLCLK => {
+                        let nia = (lparam.0 as *const NMITEMACTIVATE).as_ref().unwrap();
+                        if let Some(rc) = app.shortcut_list.keys_rect(nia.iItem as _) {
+                            app.editor.show(&rc);
+                        }
+                    }
+                    LVN_ITEMCHANGED => {
+                        let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
+                        let state = (nlv.uChanged & LVIF_STATE) != 0
+                            && (nlv.uOldState & LVIS_SELECTED) != 0
+                            && (nlv.uNewState & LVIS_SELECTED) == 0;
+                        if state || nlv.iItem == -1 {
+                            app.editor.hide();
+                        }
+                    }
+                    NM_SETFOCUS => {
+                        if app.editor.is_visible() {
+                            app.editor.hide();
+                        }
+                    }
+                    _ => {}
+                }
             }
-            WM_ERASEBKGND => {
-                let mut rc = RECT::default();
-                GetClientRect(hwnd, &mut rc);
-                FillRect(
-                    HDC(wparam.0 as _),
-                    &rc,
-                    HBRUSH(GetStockObject(GET_STOCK_OBJECT_FLAGS(SYS_COLOR_INDEX::COLOR_BTNFACE.0 + 1)).0 as _),
-                );
-                LRESULT(1)
-            }
-            _ => DefSubclassProc(hwnd, msg, wparam, lparam),
+            LRESULT(0)
         }
+        WM_ERASEBKGND => {
+            let mut rc = RECT::default();
+            GetClientRect(hwnd, &mut rc);
+            FillRect(
+                HDC(wparam.0 as _),
+                &rc,
+                HBRUSH(GetStockObject(GET_STOCK_OBJECT_FLAGS(SYS_COLOR_INDEX::COLOR_BTNFACE.0 + 1)).0 as _),
+            );
+            LRESULT(1)
+        }
+        _ => DefSubclassProc(hwnd, msg, wparam, lparam),
     }
 }

@@ -107,7 +107,7 @@ impl ShortcutList {
             }
         }
     }
-    
+
     #[inline]
     pub fn set_keys(&mut self, index: usize, keys: &Keys) {
         unsafe {

@@ -2,12 +2,13 @@ use crate::*;
 
 pub struct Editor {
     hwnd: HWND,
-    theme: isize,
     font: HFONT,
+    keys: Keys,
+    input_keys: Vec<u8>,
 }
 
 impl Editor {
-    pub fn new(parent: HWND) -> windows::Result<Self> {
+    pub fn new(parent: HWND) -> windows::Result<Box<Self>> {
         let class_name = to_wchar("EDIT");
         unsafe {
             let hwnd = CreateWindowExW(
@@ -47,26 +48,45 @@ impl Editor {
                         log::error!("{}", e);
                     }
                 }
+                CloseThemeData(theme).ok().ok();
             } else {
                 log::error!("{}", get_last_error().message());
             }
-            Ok(Self { hwnd, theme, font })
+            let editor = Box::new(Self {
+                hwnd,
+                font,
+                keys: Keys::new(),
+                input_keys: vec![0; 256],
+            });
+            SetWindowSubclass(hwnd, Some(proc), 0, editor.as_ref() as *const _ as _);
+            Ok(editor)
         }
     }
 
+    #[inline]
     pub fn show(&mut self, rc: &RECT) {
         unsafe {
+            self.keys.clear();
             MoveWindow(self.hwnd, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
             ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_SHOW);
             SetFocus(self.hwnd);
+            let empty = to_wchar("");
+            SetWindowTextW(self.hwnd, PWSTR(empty.as_ptr() as _));
         }
     }
 
-    pub fn hide(&mut self) {
+    #[inline]
+    pub fn hide(&mut self) -> &Keys {
         unsafe {
             SetFocus(GetParent(self.hwnd));
             ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_HIDE);
+            &self.keys
         }
+    }
+
+    #[inline]
+    pub fn is_visible(&self) -> bool {
+        unsafe { IsWindowVisible(self.hwnd) == TRUE }
     }
 }
 
@@ -76,9 +96,28 @@ impl Drop for Editor {
             if !self.font.is_null() {
                 DeleteObject(self.font);
             }
-            if self.theme != 0 {
-                CloseThemeData(self.theme).ok().ok();
-            }
         }
+    }
+}
+
+unsafe extern "system" fn proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    _id: usize,
+    data_ptr: usize,
+) -> LRESULT {
+    let editor = (data_ptr as *mut Editor).as_mut().unwrap();
+    match msg {
+        WM_KEYDOWN | WM_SYSKEYDOWN => {
+            get_keyboard_state(&mut editor.input_keys);
+            editor.keys.keyboard_state(&editor.input_keys);
+            let keys = to_wchar(&editor.keys.to_strings().join("+"));
+            SetWindowTextW(editor.hwnd, PWSTR(keys.as_ptr() as _));
+            LRESULT(0)
+        }
+        WM_CHAR => LRESULT(0),
+        _ => DefSubclassProc(hwnd, msg, wparam, lparam),
     }
 }

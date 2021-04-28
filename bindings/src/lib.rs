@@ -140,4 +140,6 @@ pub mod wrapper {
     pub const LVN_ITEMACTIVATE: u32 = -114i32 as _;
     pub const NM_CLICK: u32 = -2i32 as _;
     pub const NM_DBLCLK: u32 = -3i32 as _;
+    pub const NM_SETFOCUS: u32 = -7i32 as _;
+    pub const NM_KILLFOCUS: u32 = -8i32 as _;
 }

@@ -83,6 +83,11 @@ impl Keys {
     }
 
     #[inline]
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+
+    #[inline]
     pub fn keyboard_state(&mut self, v: &[u8]) {
         #[inline]
         fn is_lr_key(k: u32) -> bool {
