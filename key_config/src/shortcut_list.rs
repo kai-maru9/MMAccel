@@ -189,7 +189,6 @@ impl ShortcutList {
     ) {
         unsafe {
             let dpi = GetDpiForWindow(self.hwnd) as i32;
-            println!("{}", dpi);
             let position = position.to_physical(dpi as _);
             let size = size.to_physical(dpi as _);
             SetWindowPos(

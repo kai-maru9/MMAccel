@@ -1,5 +1,31 @@
 use crate::*;
 
+fn theme_font(hwnd: HWND) -> windows::Result<HFONT> {
+    unsafe {
+        let theme_name = to_wchar("TEXTSTYLE");
+        let theme = OpenThemeData(hwnd, PWSTR(theme_name.as_ptr() as _));
+        if theme == 0 {
+            return Err(get_last_error().into());
+        }
+        let mut log_font = LOGFONTW::default();
+        GetThemeFont(
+            theme,
+            HDC::NULL,
+            4,
+            0,
+            THEME_PROPERTY_SYMBOL_ID::TMT_FONT.0 as _,
+            &mut log_font,
+        )
+        .ok()?;
+        let font = CreateFontIndirectW(&log_font);
+        if font == HFONT::NULL {
+            return Err(get_last_error().into());
+        }
+        CloseThemeData(theme).ok()?;
+        Ok(font)
+    }
+}
+
 pub struct EditResult {
     pub category: usize,
     pub item: usize,
@@ -31,33 +57,8 @@ impl Editor {
                 HINSTANCE::NULL,
                 std::ptr::null_mut(),
             );
-            let theme_name = to_wchar("TEXTSTYLE");
-            let theme = OpenThemeData(hwnd, PWSTR(theme_name.as_ptr() as _));
-            let mut font = HFONT::NULL;
-            if theme != 0 {
-                let mut log_font = LOGFONTW::default();
-                let ret = GetThemeFont(
-                    theme,
-                    HDC::NULL,
-                    4,
-                    0,
-                    THEME_PROPERTY_SYMBOL_ID::TMT_FONT.0 as _,
-                    &mut log_font,
-                )
-                .ok();
-                match ret {
-                    Ok(_) => {
-                        font = CreateFontIndirectW(&log_font);
-                        SendMessageW(hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
-                    }
-                    Err(e) => {
-                        log::error!("{}", e);
-                    }
-                }
-                CloseThemeData(theme).ok().ok();
-            } else {
-                log::error!("{}", get_last_error().message());
-            }
+            let font = theme_font(hwnd)?;
+            SendMessageW(hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
             let editor = Box::new(Self {
                 hwnd,
                 font,
@@ -106,33 +107,8 @@ impl Editor {
     #[inline]
     pub fn resize(&mut self) {
         unsafe {
-            let theme_name = to_wchar("TEXTSTYLE");
-            let theme = OpenThemeData(self.hwnd, PWSTR(theme_name.as_ptr() as _));
-            let mut font = HFONT::NULL;
-            if theme != 0 {
-                let mut log_font = LOGFONTW::default();
-                let ret = GetThemeFont(
-                    theme,
-                    HDC::NULL,
-                    4,
-                    0,
-                    THEME_PROPERTY_SYMBOL_ID::TMT_FONT.0 as _,
-                    &mut log_font,
-                )
-                .ok();
-                match ret {
-                    Ok(_) => {
-                        font = CreateFontIndirectW(&log_font);
-                        SendMessageW(self.hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
-                    }
-                    Err(e) => {
-                        log::error!("{}", e);
-                    }
-                }
-                CloseThemeData(theme).ok().ok();
-            } else {
-                log::error!("{}", get_last_error().message());
-            }
+            let font = theme_font(self.hwnd).unwrap();
+            SendMessageW(self.hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
             DeleteObject(self.font);
             self.font = font;
         }
