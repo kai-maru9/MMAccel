@@ -2,7 +2,6 @@ use crate::*;
 
 pub struct ShortcutList {
     hwnd: HWND,
-    columns_size: [i32; 2],
 }
 
 impl ShortcutList {
@@ -12,7 +11,7 @@ impl ShortcutList {
         size: impl Into<wita::LogicalSize<i32>>,
         columns_size: [i32; 2],
     ) -> windows::Result<Self> {
-        let dpi = parent.dpi();
+        let dpi = parent.dpi() as i32;
         let pt = pt.into().to_physical(dpi as _);
         let size = size.into().to_physical(dpi as _);
         let class_name = to_wchar("SysListView32");
@@ -42,10 +41,13 @@ impl ShortcutList {
             let ex_style =
                 ex_style | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_AUTOSIZECOLUMNS;
             SendMessageW(hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(ex_style as _));
-            let cx = columns_size[0] as _;
+            let cx = columns_size[0] * dpi / 96;
             let text = to_wchar("機能");
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_MINWIDTH | LVCOLUMNW_MASK::LVCF_TEXT,
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH
+                    | LVCOLUMNW_MASK::LVCF_FMT
+                    | LVCOLUMNW_MASK::LVCF_MINWIDTH
+                    | LVCOLUMNW_MASK::LVCF_TEXT,
                 fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
                 cx,
                 cxMin: cx,
@@ -54,10 +56,13 @@ impl ShortcutList {
                 ..Default::default()
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(0), LPARAM(&column as *const _ as _));
-            let cx = columns_size[1] as _;
+            let cx = columns_size[1] * dpi / 96;
             let text = to_wchar("キー");
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_MINWIDTH | LVCOLUMNW_MASK::LVCF_TEXT,
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH
+                    | LVCOLUMNW_MASK::LVCF_FMT
+                    | LVCOLUMNW_MASK::LVCF_MINWIDTH
+                    | LVCOLUMNW_MASK::LVCF_TEXT,
                 fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
                 cx,
                 cxMin: cx,
@@ -66,7 +71,7 @@ impl ShortcutList {
                 ..Default::default()
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(1), LPARAM(&column as *const _ as _));
-            let cx = size.width as i32 - columns_size.iter().sum::<i32>() - 5;
+            let cx = size.width as i32 - (columns_size.iter().sum::<i32>() + 5) * dpi * 96;
             let text = to_wchar("重複");
             let column = LVCOLUMNW {
                 mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_TEXT,
@@ -80,7 +85,7 @@ impl ShortcutList {
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(2), LPARAM(&column as *const _ as _));
             let theme = to_wchar("Explorer");
             SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok()?;
-            Ok(Self { hwnd, columns_size })
+            Ok(Self { hwnd })
         }
     }
 
@@ -176,9 +181,15 @@ impl ShortcutList {
     }
 
     #[inline]
-    pub fn resize(&mut self, position: wita::LogicalPosition<i32>, size: wita::LogicalSize<i32>) {
+    pub fn resize(
+        &mut self,
+        position: wita::LogicalPosition<i32>,
+        size: wita::LogicalSize<i32>,
+        columns_size: [i32; 2],
+    ) {
         unsafe {
-            let dpi = GetDpiForWindow(self.hwnd);
+            let dpi = GetDpiForWindow(self.hwnd) as i32;
+            println!("{}", dpi);
             let position = position.to_physical(dpi as _);
             let size = size.to_physical(dpi as _);
             SetWindowPos(
@@ -190,7 +201,18 @@ impl ShortcutList {
                 size.height as _,
                 SET_WINDOW_POS_FLAGS::SWP_NOZORDER,
             );
-            let width = size.width - self.columns_size.iter().sum::<i32>() - 5;
+            for (i, &cx) in columns_size.iter().enumerate() {
+                let cx = cx * dpi / 96;
+                let column = LVCOLUMNW {
+                    mask: LVCOLUMNW_MASK::LVCF_WIDTH
+                        | LVCOLUMNW_MASK::LVCF_MINWIDTH,
+                    cx,
+                    cxMin: cx,
+                    ..Default::default()
+                };
+                SendMessageW(self.hwnd, LVM_SETCOLUMNW, WPARAM(i), LPARAM(&column as *const _ as _));
+            }
+            let width = size.width - (columns_size.iter().sum::<i32>() + 5) * dpi / 96;
             SendMessageW(self.hwnd, LVM_SETCOLUMNWIDTH, WPARAM(2), LPARAM(width as _));
         }
     }

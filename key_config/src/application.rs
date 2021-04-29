@@ -163,8 +163,8 @@ impl Default for Settings {
 
 const MARGIN: i32 = 10;
 const SIDE_MENU_WIDTH: i32 = 150;
-const SHORTCUT_MENU_NAME_COLUMN_WIDTH: i32 = 280;
-const SHORTCUT_MENU_KEYS_COLUMN_WIDTH: i32 = 200;
+const SHORTCUT_MENU_NAME_COLUMN_WIDTH: i32 = 187;
+const SHORTCUT_MENU_KEYS_COLUMN_WIDTH: i32 = 133;
 
 struct Rect {
     position: wita::LogicalPosition<i32>,
@@ -296,8 +296,11 @@ impl wita::EventHandler for Box<Application> {
         }
         let layout = calc_layout(window_size);
         self.side_menu.resize(layout.side_menu.position, layout.side_menu.size);
-        self.shortcut_list
-            .resize(layout.shortcut_list.position, layout.shortcut_list.size);
+        self.shortcut_list.resize(
+            layout.shortcut_list.position,
+            layout.shortcut_list.size,
+            [SHORTCUT_MENU_NAME_COLUMN_WIDTH, SHORTCUT_MENU_KEYS_COLUMN_WIDTH],
+        );
     }
 
     fn closed(&mut self, _: &wita::Window) {
@@ -337,7 +340,9 @@ unsafe extern "system" fn main_window_proc(
             } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
                 match nmhdr.code {
                     NM_CUSTOMDRAW => {
-                        let subitem_stage = (NMCUSTOMDRAW_DRAW_STAGE::CDDS_ITEMPREPAINT | NMCUSTOMDRAW_DRAW_STAGE::CDDS_SUBITEM).0 as u32;
+                        let subitem_stage = (NMCUSTOMDRAW_DRAW_STAGE::CDDS_ITEMPREPAINT
+                            | NMCUSTOMDRAW_DRAW_STAGE::CDDS_SUBITEM)
+                            .0 as u32;
                         let mut ncd = (lparam.0 as *mut NMLVCUSTOMDRAW).as_mut().unwrap();
                         match ncd.nmcd.dwDrawStage {
                             NMCUSTOMDRAW_DRAW_STAGE::CDDS_PREPAINT => {
