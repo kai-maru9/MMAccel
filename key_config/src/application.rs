@@ -336,6 +336,26 @@ unsafe extern "system" fn main_window_proc(
                 LRESULT(0)
             } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
                 match nmhdr.code {
+                    NM_CUSTOMDRAW => {
+                        let subitem_stage = (NMCUSTOMDRAW_DRAW_STAGE::CDDS_ITEMPREPAINT | NMCUSTOMDRAW_DRAW_STAGE::CDDS_SUBITEM).0 as u32;
+                        let mut ncd = (lparam.0 as *mut NMLVCUSTOMDRAW).as_mut().unwrap();
+                        match ncd.nmcd.dwDrawStage {
+                            NMCUSTOMDRAW_DRAW_STAGE::CDDS_PREPAINT => {
+                                return LRESULT(CDRF_NOTIFYITEMDRAW as _);
+                            }
+                            NMCUSTOMDRAW_DRAW_STAGE::CDDS_ITEMPREPAINT => {
+                                return LRESULT(CDRF_NOTIFYSUBITEMDRAW as _);
+                            }
+                            stage if (stage.0 & subitem_stage) != 0 => {
+                                if ncd.iSubItem == 2 {
+                                    ncd.clrText = 0x0000ff;
+                                    return LRESULT(CDRF_NEWFONT as _);
+                                }
+                                return LRESULT(CDRF_DODEFAULT as _);
+                            }
+                            _ => {}
+                        }
+                    }
                     NM_CLICK => {
                         if app.editor.is_visible() {
                             if let Some(ret) = app.editor.end() {

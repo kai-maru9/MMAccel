@@ -143,4 +143,5 @@ pub mod wrapper {
     pub const NM_RCLICK: u32 = -5i32 as _;
     pub const NM_SETFOCUS: u32 = -7i32 as _;
     pub const NM_KILLFOCUS: u32 = -8i32 as _;
+    pub const NM_CUSTOMDRAW: u32 = -12i32 as _;
 }
