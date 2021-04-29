@@ -32,7 +32,17 @@ impl KeyTable {
             serde_json::from_reader(std::io::BufReader::new(file))?
         };
         let key_map: serde_json::Value = {
-            let file = std::fs::File::open(key_map_path)?;
+            let file = match std::fs::File::open(key_map_path.as_ref()) {
+                Ok(file) => file,
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                    {
+                        let file = std::fs::File::create(key_map_path.as_ref())?;
+                        serde_json::to_writer_pretty(std::io::BufWriter::new(file), &KeyMap::default())?;
+                    }
+                    std::fs::File::open(key_map_path.as_ref())?
+                },
+                Err(e) => return Err(e),
+            };
             serde_json::from_reader(std::io::BufReader::new(file))?
         };
         let mmd_map = mmd_map.as_object().ok_or(INVALID_DATA)?;
@@ -76,6 +86,21 @@ impl KeyTable {
             });
         }
         Ok(Self(table))
+    }
+
+    fn to_file(&self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
+        let file = std::fs::File::create(path)?;
+        let mut v = KeyMap::new();
+        for elem in self
+            .0
+            .iter()
+            .flat_map(|cat| &cat.items)
+            .filter_map(|item| item.keys.as_ref().map(|keys| (&item.id, keys)))
+        {
+            v.insert(elem.0, elem.1.clone());
+        }
+        serde_json::to_writer_pretty(std::io::BufWriter::new(file), &v)?;
+        Ok(())
     }
 
     #[inline]
@@ -152,6 +177,7 @@ impl Application {
             self.shortcut_list.set_keys(item, keys.as_ref());
         }
         self.key_table.set_keys(category, item, keys);
+        self.key_table.to_file("key_map.json").ok();
     }
 }
 

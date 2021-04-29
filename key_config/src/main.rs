@@ -13,7 +13,7 @@ use bindings::Windows::Win32::{
     SystemServices::*, WindowsAndMessaging::*,
 };
 use editor::*;
-use key_map::Keys;
+use key_map::*;
 use popup_menu::*;
 use shortcut_list::*;
 use side_menu::*;

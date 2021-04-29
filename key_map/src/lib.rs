@@ -128,11 +128,15 @@ impl Default for Keys {
 pub struct KeyMap(HashMap<String, Keys>);
 
 impl KeyMap {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
     pub fn from_file(path: impl AsRef<std::path::Path>) -> std::io::Result<Self> {
         let file = File::open(path)?;
         Ok(serde_json::from_reader(BufReader::new(file))?)
     }
-
+    
     #[inline]
     pub fn insert(&mut self, k: impl AsRef<str>, v: Keys) {
         self.0.insert(k.as_ref().into(), v);

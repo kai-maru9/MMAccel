@@ -134,13 +134,23 @@ unsafe extern "system" fn proc(
         }
         WM_CHAR => LRESULT(0),
         WM_LBUTTONDOWN => {
-            PostMessageW(GetParent(GetParent(editor.hwnd)), WM_KEY_CONFIG_EDIT_APPLY, WPARAM(0), LPARAM(0));
+            PostMessageW(
+                GetParent(GetParent(editor.hwnd)),
+                WM_KEY_CONFIG_EDIT_APPLY,
+                WPARAM(0),
+                LPARAM(0),
+            );
             LRESULT(0)
         }
         WM_RBUTTONDOWN => {
-            PostMessageW(GetParent(GetParent(editor.hwnd)), WM_KEY_CONFIG_EDIT_CANCEL, WPARAM(0), LPARAM(0));
+            PostMessageW(
+                GetParent(GetParent(editor.hwnd)),
+                WM_KEY_CONFIG_EDIT_CANCEL,
+                WPARAM(0),
+                LPARAM(0),
+            );
             LRESULT(0)
-        },
+        }
         _ => DefSubclassProc(hwnd, msg, wparam, lparam),
     }
 }
