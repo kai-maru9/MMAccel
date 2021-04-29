@@ -101,6 +101,24 @@ impl SideMenu {
     }
 
     #[inline]
+    pub fn resize(&mut self, position: wita::LogicalPosition<i32>, size: wita::LogicalSize<i32>) {
+        unsafe {
+            let dpi = GetDpiForWindow(self.hwnd);
+            let position = position.to_physical(dpi as _);
+            let size = size.to_physical(dpi as _);
+            SetWindowPos(
+                self.hwnd,
+                HWND::NULL,
+                position.x,
+                position.y,
+                size.width as _,
+                size.height as _,
+                SET_WINDOW_POS_FLAGS::SWP_NOZORDER,
+            );
+        }
+    }
+
+    #[inline]
     pub fn handle(&self) -> HWND {
         self.hwnd
     }

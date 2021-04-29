@@ -2,6 +2,7 @@ use crate::*;
 
 pub struct ShortcutList {
     hwnd: HWND,
+    columns_size: [i32; 2],
 }
 
 impl ShortcutList {
@@ -9,6 +10,7 @@ impl ShortcutList {
         parent: &wita::Window,
         pt: impl Into<wita::LogicalPosition<i32>>,
         size: impl Into<wita::LogicalSize<i32>>,
+        columns_size: [i32; 2],
     ) -> windows::Result<Self> {
         let dpi = parent.dpi();
         let pt = pt.into().to_physical(dpi as _);
@@ -22,6 +24,7 @@ impl ShortcutList {
                 WINDOW_STYLE::WS_CHILD
                     | WINDOW_STYLE::WS_BORDER
                     | WINDOW_STYLE::WS_VISIBLE
+                    | WINDOW_STYLE::WS_CLIPCHILDREN
                     | WINDOW_STYLE(LVS_REPORT)
                     | WINDOW_STYLE(LVS_NOCOLUMNHEADER),
                 pt.x,
@@ -40,18 +43,36 @@ impl ShortcutList {
             let ex_style =
                 ex_style | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_AUTOSIZECOLUMNS;
             SendMessageW(hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(ex_style as _));
+            let cx = columns_size[0] as _;
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT,
-                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT | LVCOLUMNW_FORMAT::LVCFMT_FIXED_WIDTH,
-                cx: size.width / 2,
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_MINWIDTH,
+                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
+                cx,
+                cxMin: cx,
                 ..Default::default()
             };
-            for i in 0..2 {
-                SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(i), LPARAM(&column as *const _ as _));
-            }
+            SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(0), LPARAM(&column as *const _ as _));
+            let cx = columns_size[1] as _;
+            let column = LVCOLUMNW {
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_MINWIDTH,
+                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
+                cx,
+                cxMin: cx,
+                ..Default::default()
+            };
+            SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(1), LPARAM(&column as *const _ as _));
+            let cx = size.width as i32 - columns_size.iter().sum::<i32>() - 5;
+            let column = LVCOLUMNW {
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT,
+                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
+                cx,
+                cxMin: cx,
+                ..Default::default()
+            };
+            SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(2), LPARAM(&column as *const _ as _));
             let theme = to_wchar("Explorer");
             SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok()?;
-            Ok(Self { hwnd })
+            Ok(Self { hwnd, columns_size })
         }
     }
 
@@ -123,6 +144,46 @@ impl ShortcutList {
                 ..Default::default()
             };
             SendMessageW(self.hwnd, LVM_SETITEMW, WPARAM(0), LPARAM(&item as *const _ as _));
+        }
+    }
+
+    #[inline]
+    pub fn set_dup(&mut self, index: usize, text: Option<&str>) {
+        unsafe {
+            let text = if let Some(text) = text {
+                to_wchar(text)
+            } else {
+                to_wchar("")
+            };
+            let item = LVITEMW {
+                iItem: index as _,
+                iSubItem: 2,
+                mask: LVIF_TEXT,
+                pszText: PWSTR(text.as_ptr() as _),
+                cchTextMax: text.len() as _,
+                ..Default::default()
+            };
+            SendMessageW(self.hwnd, LVM_SETITEMW, WPARAM(0), LPARAM(&item as *const _ as _));
+        }
+    }
+
+    #[inline]
+    pub fn resize(&mut self, position: wita::LogicalPosition<i32>, size: wita::LogicalSize<i32>) {
+        unsafe {
+            let dpi = GetDpiForWindow(self.hwnd);
+            let position = position.to_physical(dpi as _);
+            let size = size.to_physical(dpi as _);
+            SetWindowPos(
+                self.hwnd,
+                HWND::NULL,
+                position.x,
+                position.y,
+                size.width as _,
+                size.height as _,
+                SET_WINDOW_POS_FLAGS::SWP_NOZORDER,
+            );
+            let width = size.width - self.columns_size.iter().sum::<i32>() - 5;
+            SendMessageW(self.hwnd, LVM_SETCOLUMNWIDTH, WPARAM(2), LPARAM(width as _));
         }
     }
 

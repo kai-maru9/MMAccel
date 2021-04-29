@@ -43,5 +43,19 @@
 			"preLaunchTask": "debug copy",
 			"internalConsoleOptions": "openOnSessionStart",
 		},
+		{
+			"name": "run key_config release",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/MikuMikuDance_v932x64/MMAccel/key_config.exe",
+			"args": [],
+			"cwd": "${workspaceFolder}/MikuMikuDance_v932x64/MMAccel",
+			"environment": [
+				{ "name": "RUST_LOG", "value": "warn" },
+			],
+			"console": "internalConsole",
+			"preLaunchTask": "release copy",
+			"internalConsoleOptions": "openOnSessionStart",
+		},
 	]
 }

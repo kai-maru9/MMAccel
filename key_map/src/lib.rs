@@ -136,7 +136,7 @@ impl KeyMap {
         let file = File::open(path)?;
         Ok(serde_json::from_reader(BufReader::new(file))?)
     }
-    
+
     #[inline]
     pub fn insert(&mut self, k: impl AsRef<str>, v: Keys) {
         self.0.insert(k.as_ref().into(), v);

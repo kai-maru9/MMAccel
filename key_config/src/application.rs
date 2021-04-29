@@ -40,7 +40,7 @@ impl KeyTable {
                         serde_json::to_writer_pretty(std::io::BufWriter::new(file), &KeyMap::default())?;
                     }
                     std::fs::File::open(key_map_path.as_ref())?
-                },
+                }
                 Err(e) => return Err(e),
             };
             serde_json::from_reader(std::io::BufReader::new(file))?
@@ -127,7 +127,74 @@ impl std::ops::Index<usize> for KeyTable {
     }
 }
 
+const SETTINGS_FILE_NAME: &str = "key_config_settrings.json";
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct Settings {
+    window_position: wita::ScreenPosition,
+    window_size: wita::LogicalSize<u32>,
+}
+
+impl Settings {
+    fn from_file() -> anyhow::Result<Self> {
+        let settings = match std::fs::File::open(SETTINGS_FILE_NAME) {
+            Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Self::default(),
+            Err(e) => return Err(e.into()),
+        };
+        Ok(settings)
+    }
+
+    fn to_file(&self) -> anyhow::Result<()> {
+        let file = std::fs::File::create(SETTINGS_FILE_NAME)?;
+        serde_json::to_writer_pretty(std::io::BufWriter::new(file), self)?;
+        Ok(())
+    }
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            window_position: (0, 0).into(),
+            window_size: (640, 480).into(),
+        }
+    }
+}
+
+const MARGIN: i32 = 10;
+const SIDE_MENU_WIDTH: i32 = 150;
+const SHORTCUT_MENU_NAME_COLUMN_WIDTH: i32 = 280;
+const SHORTCUT_MENU_KEYS_COLUMN_WIDTH: i32 = 200;
+
+struct Rect {
+    position: wita::LogicalPosition<i32>,
+    size: wita::LogicalSize<i32>,
+}
+
+struct Layout {
+    side_menu: Rect,
+    shortcut_list: Rect,
+}
+
+fn calc_layout(window_size: wita::LogicalSize<u32>) -> Layout {
+    let height = window_size.height as i32 - MARGIN * 2;
+    let side_menu = Rect {
+        position: (MARGIN, MARGIN).into(),
+        size: (SIDE_MENU_WIDTH, height).into(),
+    };
+    let width = window_size.width as i32 - SIDE_MENU_WIDTH - MARGIN * 3;
+    let shortcut_list = Rect {
+        position: ((SIDE_MENU_WIDTH + MARGIN * 2) as _, MARGIN as _).into(),
+        size: (width, height).into(),
+    };
+    Layout {
+        side_menu,
+        shortcut_list,
+    }
+}
+
 pub struct Application {
+    settings: Settings,
     main_window: wita::Window,
     side_menu: SideMenu,
     shortcut_list: ShortcutList,
@@ -138,25 +205,35 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> anyhow::Result<Box<Self>> {
+        let settings = Settings::from_file()?;
         let key_table = KeyTable::from_file("mmd_map.json", "order.json", "key_map.json")?;
         let main_window = wita::WindowBuilder::new()
             .title("MMAccel キー設定")
+            .position(settings.window_position)
+            .inner_size(settings.window_size)
             .style(
                 wita::WindowStyle::default()
                     .has_maximize_box(false)
                     .has_minimize_box(false),
             )
             .build()?;
-        let mut side_menu = SideMenu::new(&main_window, (10, 10), (150, 460))?;
+        let layout = calc_layout(settings.window_size);
+        let mut side_menu = SideMenu::new(&main_window, layout.side_menu.position, layout.side_menu.size)?;
         key_table.iter().for_each(|cat| side_menu.push(&cat.name));
         side_menu.set_index(0);
-        let mut shortcut_list = ShortcutList::new(&main_window, (170, 10), (455, 460))?;
+        let mut shortcut_list = ShortcutList::new(
+            &main_window,
+            layout.shortcut_list.position,
+            layout.shortcut_list.size,
+            [SHORTCUT_MENU_NAME_COLUMN_WIDTH, SHORTCUT_MENU_KEYS_COLUMN_WIDTH],
+        )?;
         key_table[0]
             .items
             .iter()
             .for_each(|item| shortcut_list.push(&item.name, item.keys.as_ref()));
         let editor = Editor::new(shortcut_list.handle())?;
         let mut app = Box::new(Self {
+            settings,
             main_window,
             side_menu,
             shortcut_list,
@@ -178,10 +255,59 @@ impl Application {
         }
         self.key_table.set_keys(category, item, keys);
         self.key_table.to_file("key_map.json").ok();
+        self.update_shortcut_list();
+    }
+
+    fn update_shortcut_list(&mut self) {
+        let category = self.side_menu.current_index();
+        for (index, item) in self.key_table[category].items.iter().enumerate() {
+            if item.keys.is_none() {
+                self.shortcut_list.set_dup(index, None);
+                continue;
+            }
+            let dup = self
+                .key_table
+                .iter()
+                .flat_map(|cat| &cat.items)
+                .filter(|i| i.id != item.id && i.keys.is_some() && i.keys == item.keys)
+                .map(|i| i.name.as_str())
+                .collect::<Vec<_>>();
+            if dup.is_empty() {
+                self.shortcut_list.set_dup(index, None);
+            } else {
+                self.shortcut_list.set_dup(index, Some(&dup.join(", ")));
+            }
+        }
     }
 }
 
-impl wita::EventHandler for Box<Application> {}
+impl wita::EventHandler for Box<Application> {
+    fn resizing(&mut self, window: &wita::Window, size: wita::PhysicalSize<u32>) {
+        let dpi = window.dpi();
+        let mut window_size = size.to_logical(dpi);
+        const WIDTH: u32 = (SHORTCUT_MENU_NAME_COLUMN_WIDTH + SHORTCUT_MENU_KEYS_COLUMN_WIDTH) as _;
+        if window_size.width < WIDTH {
+            window_size.width = WIDTH;
+            window.set_inner_size(window_size);
+        }
+        if window_size.height < 240 {
+            window_size.height = 240;
+            window.set_inner_size(window_size);
+        }
+        let layout = calc_layout(window_size);
+        self.side_menu.resize(layout.side_menu.position, layout.side_menu.size);
+        self.shortcut_list
+            .resize(layout.shortcut_list.position, layout.shortcut_list.size);
+    }
+
+    fn closed(&mut self, _: &wita::Window) {
+        self.settings.window_position = self.main_window.position();
+        self.settings.window_size = self.main_window.inner_size().to_logical(self.main_window.dpi());
+        if let Err(e) = self.settings.to_file() {
+            log::error!("{}", e);
+        }
+    }
+}
 
 pub const WM_KEY_CONFIG_EDIT_APPLY: u32 = WM_APP + 10;
 pub const WM_KEY_CONFIG_EDIT_CANCEL: u32 = WM_APP + 11;
@@ -205,6 +331,7 @@ unsafe extern "system" fn main_window_proc(
                     for item in app.key_table[app.side_menu.current_index()].items.iter() {
                         app.shortcut_list.push(&item.name, item.keys.as_ref());
                     }
+                    app.update_shortcut_list();
                 }
                 LRESULT(0)
             } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
@@ -218,10 +345,12 @@ unsafe extern "system" fn main_window_proc(
                     }
                     NM_DBLCLK => {
                         let nia = (lparam.0 as *const NMITEMACTIVATE).as_ref().unwrap();
-                        if let Some(rc) = app.shortcut_list.keys_rect(nia.iItem as _) {
-                            let category = app.side_menu.current_index();
-                            let item = nia.iItem as _;
-                            app.editor.begin(&rc, category, item, app.key_table.get(category, item));
+                        if nia.iItem != -1 {
+                            if let Some(rc) = app.shortcut_list.keys_rect(nia.iItem as _) {
+                                let category = app.side_menu.current_index();
+                                let item = nia.iItem as _;
+                                app.editor.begin(&rc, category, item, app.key_table.get(category, item));
+                            }
                         }
                     }
                     NM_RCLICK => {
