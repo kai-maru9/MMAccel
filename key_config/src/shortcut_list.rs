@@ -25,8 +25,7 @@ impl ShortcutList {
                     | WINDOW_STYLE::WS_BORDER
                     | WINDOW_STYLE::WS_VISIBLE
                     | WINDOW_STYLE::WS_CLIPCHILDREN
-                    | WINDOW_STYLE(LVS_REPORT)
-                    | WINDOW_STYLE(LVS_NOCOLUMNHEADER),
+                    | WINDOW_STYLE(LVS_REPORT),
                 pt.x,
                 pt.y,
                 size.width,
@@ -44,29 +43,38 @@ impl ShortcutList {
                 ex_style | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_AUTOSIZECOLUMNS;
             SendMessageW(hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(ex_style as _));
             let cx = columns_size[0] as _;
+            let text = to_wchar("機能");
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_MINWIDTH,
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_MINWIDTH | LVCOLUMNW_MASK::LVCF_TEXT,
                 fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
                 cx,
                 cxMin: cx,
+                pszText: PWSTR(text.as_ptr() as _),
+                cchTextMax: text.len() as _,
                 ..Default::default()
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(0), LPARAM(&column as *const _ as _));
             let cx = columns_size[1] as _;
+            let text = to_wchar("キー");
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_MINWIDTH,
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_MINWIDTH | LVCOLUMNW_MASK::LVCF_TEXT,
                 fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
                 cx,
                 cxMin: cx,
+                pszText: PWSTR(text.as_ptr() as _),
+                cchTextMax: text.len() as _,
                 ..Default::default()
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(1), LPARAM(&column as *const _ as _));
             let cx = size.width as i32 - columns_size.iter().sum::<i32>() - 5;
+            let text = to_wchar("重複");
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT,
+                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_TEXT,
                 fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
                 cx,
                 cxMin: cx,
+                pszText: PWSTR(text.as_ptr() as _),
+                cchTextMax: text.len() as _,
                 ..Default::default()
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(2), LPARAM(&column as *const _ as _));
