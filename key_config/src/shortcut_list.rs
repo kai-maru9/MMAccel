@@ -12,8 +12,8 @@ impl ShortcutList {
         columns_size: [i32; 2],
     ) -> windows::Result<Self> {
         let dpi = parent.dpi() as i32;
-        let pt = pt.into().to_physical(dpi as _);
-        let size = size.into().to_physical(dpi as _);
+        let pt = pt.into().to_physical(dpi);
+        let size = size.into().to_physical(dpi);
         let class_name = to_wchar("SysListView32");
         unsafe {
             let hwnd = CreateWindowExW(
@@ -71,7 +71,7 @@ impl ShortcutList {
                 ..Default::default()
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(1), LPARAM(&column as *const _ as _));
-            let cx = size.width as i32 - (columns_size.iter().sum::<i32>() + 5) * dpi * 96;
+            let cx = size.width as i32 - (columns_size.iter().sum::<i32>() + 5) * dpi / 96;
             let text = to_wchar("重複");
             let column = LVCOLUMNW {
                 mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_TEXT,

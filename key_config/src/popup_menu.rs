@@ -34,7 +34,7 @@ impl PopupMenu {
             self.item = item;
             TrackPopupMenu(
                 self.menu,
-                TRACK_POPUP_MENU_FLAGS::TPM_LEFTALIGN,
+                TRACK_POPUP_MENU_FLAGS::TPM_LEFTALIGN | TRACK_POPUP_MENU_FLAGS::TPM_VCENTERALIGN,
                 pt.x,
                 pt.y,
                 0,
