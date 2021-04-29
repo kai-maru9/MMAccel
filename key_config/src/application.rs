@@ -156,7 +156,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             window_position: (0, 0).into(),
-            window_size: (640, 480).into(),
+            window_size: (710, 526).into(),
         }
     }
 }
