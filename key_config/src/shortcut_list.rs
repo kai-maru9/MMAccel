@@ -102,22 +102,24 @@ impl ShortcutList {
                 ..Default::default()
             };
             SendMessageW(self.hwnd, LVM_INSERTITEMW, WPARAM(0), LPARAM(&item as *const _ as _));
-            if let Some(keys) = keys {
-                self.set_keys(self.size() - 1, keys);
-            }
+            self.set_keys(self.size() - 1, keys);
         }
     }
 
     #[inline]
-    pub fn set_keys(&mut self, index: usize, keys: &Keys) {
+    pub fn set_keys(&mut self, index: usize, keys: Option<&Keys>) {
         unsafe {
-            let keys = to_wchar(&keys.to_strings().join("+"));
+            let text = if let Some(keys) = keys {
+                to_wchar(&keys.to_strings().join("+"))
+            } else {
+                to_wchar("")
+            };
             let item = LVITEMW {
                 iItem: index as _,
                 iSubItem: 1,
                 mask: LVIF_TEXT,
-                pszText: PWSTR(keys.as_ptr() as _),
-                cchTextMax: keys.len() as _,
+                pszText: PWSTR(text.as_ptr() as _),
+                cchTextMax: text.len() as _,
                 ..Default::default()
             };
             SendMessageW(self.hwnd, LVM_SETITEMW, WPARAM(0), LPARAM(&item as *const _ as _));

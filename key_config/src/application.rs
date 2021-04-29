@@ -78,8 +78,19 @@ impl KeyTable {
         Ok(Self(table))
     }
 
+    #[inline]
     fn iter(&self) -> std::slice::Iter<Category> {
         self.0.iter()
+    }
+
+    #[inline]
+    fn get(&self, category: usize, item: usize) -> Option<&Keys> {
+        (self.0)[category].items[item].keys.as_ref()
+    }
+
+    #[inline]
+    fn set_keys(&mut self, category: usize, item: usize, keys: Option<Keys>) {
+        (self.0)[category].items[item].keys = keys;
     }
 }
 
@@ -97,6 +108,7 @@ pub struct Application {
     shortcut_list: ShortcutList,
     editor: Box<Editor>,
     key_table: KeyTable,
+    popup_menu: PopupMenu,
 }
 
 impl Application {
@@ -125,6 +137,7 @@ impl Application {
             shortcut_list,
             key_table,
             editor,
+            popup_menu: PopupMenu::new(),
         });
         unsafe {
             let hwnd = HWND(app.main_window.raw_handle() as _);
@@ -133,9 +146,19 @@ impl Application {
         }
         Ok(app)
     }
+
+    fn update_keys(&mut self, category: usize, item: usize, keys: Option<Keys>) {
+        if category == self.side_menu.current_index() {
+            self.shortcut_list.set_keys(item, keys.as_ref());
+        }
+        self.key_table.set_keys(category, item, keys);
+    }
 }
 
 impl wita::EventHandler for Box<Application> {}
+
+pub const WM_KEY_CONFIG_EDIT_APPLY: u32 = WM_APP + 10;
+pub const WM_KEY_CONFIG_EDIT_CANCEL: u32 = WM_APP + 11;
 
 unsafe extern "system" fn main_window_proc(
     hwnd: HWND,
@@ -157,32 +180,48 @@ unsafe extern "system" fn main_window_proc(
                         app.shortcut_list.push(&item.name, item.keys.as_ref());
                     }
                 }
+                LRESULT(0)
             } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
                 match nmhdr.code {
+                    NM_CLICK => {
+                        if app.editor.is_visible() {
+                            if let Some(ret) = app.editor.end() {
+                                app.update_keys(ret.category, ret.item, Some(ret.keys));
+                            }
+                        }
+                    }
                     NM_DBLCLK => {
                         let nia = (lparam.0 as *const NMITEMACTIVATE).as_ref().unwrap();
                         if let Some(rc) = app.shortcut_list.keys_rect(nia.iItem as _) {
-                            app.editor.show(&rc);
+                            let category = app.side_menu.current_index();
+                            let item = nia.iItem as _;
+                            app.editor.begin(&rc, category, item, app.key_table.get(category, item));
                         }
                     }
-                    LVN_ITEMCHANGED => {
-                        let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
-                        let state = (nlv.uChanged & LVIF_STATE) != 0
-                            && (nlv.uOldState & LVIS_SELECTED) != 0
-                            && (nlv.uNewState & LVIS_SELECTED) == 0;
-                        if state || nlv.iItem == -1 {
-                            app.editor.hide();
-                        }
-                    }
-                    NM_SETFOCUS => {
+                    NM_RCLICK => {
                         if app.editor.is_visible() {
-                            app.editor.hide();
+                            app.editor.end();
+                        } else {
+                            let nia = (lparam.0 as *const NMITEMACTIVATE).as_ref().unwrap();
+                            let mut pt = POINT {
+                                x: nia.ptAction.x,
+                                y: nia.ptAction.y,
+                            };
+                            ClientToScreen(app.shortcut_list.handle(), &mut pt);
+                            app.popup_menu.track(
+                                &app.main_window,
+                                app.side_menu.current_index(),
+                                nia.iItem as _,
+                                wita::ScreenPosition::new(pt.x, pt.y),
+                            );
                         }
                     }
                     _ => {}
                 }
+                LRESULT(0)
+            } else {
+                DefSubclassProc(hwnd, msg, wparam, lparam)
             }
-            LRESULT(0)
         }
         WM_ERASEBKGND => {
             let mut rc = RECT::default();
@@ -193,6 +232,24 @@ unsafe extern "system" fn main_window_proc(
                 HBRUSH(GetStockObject(GET_STOCK_OBJECT_FLAGS(SYS_COLOR_INDEX::COLOR_BTNFACE.0 + 1)).0 as _),
             );
             LRESULT(1)
+        }
+        WM_COMMAND => {
+            if (wparam.0 & 0xffff) as u32 == IDM_MENU_DETACH {
+                app.update_keys(app.popup_menu.category(), app.popup_menu.item(), None);
+            }
+            LRESULT(0)
+        }
+        WM_KEY_CONFIG_EDIT_APPLY => {
+            if app.editor.is_visible() {
+                if let Some(ret) = app.editor.end() {
+                    app.update_keys(ret.category, ret.item, Some(ret.keys));
+                }
+            }
+            LRESULT(0)
+        }
+        WM_KEY_CONFIG_EDIT_CANCEL => {
+            app.editor.end();
+            LRESULT(0)
         }
         _ => DefSubclassProc(hwnd, msg, wparam, lparam),
     }

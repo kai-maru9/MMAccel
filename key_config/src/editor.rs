@@ -1,10 +1,16 @@
 use crate::*;
 
+pub struct EditResult {
+    pub category: usize,
+    pub item: usize,
+    pub keys: Keys,
+}
+
 pub struct Editor {
     hwnd: HWND,
     font: HFONT,
-    keys: Keys,
     input_keys: Vec<u8>,
+    result: Option<EditResult>,
 }
 
 impl Editor {
@@ -55,8 +61,8 @@ impl Editor {
             let editor = Box::new(Self {
                 hwnd,
                 font,
-                keys: Keys::new(),
                 input_keys: vec![0; 256],
+                result: None,
             });
             SetWindowSubclass(hwnd, Some(proc), 0, editor.as_ref() as *const _ as _);
             Ok(editor)
@@ -64,23 +70,31 @@ impl Editor {
     }
 
     #[inline]
-    pub fn show(&mut self, rc: &RECT) {
+    pub fn begin(&mut self, rc: &RECT, category: usize, item: usize, keys: Option<&Keys>) {
         unsafe {
-            self.keys.clear();
             MoveWindow(self.hwnd, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
             ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_SHOW);
             SetFocus(self.hwnd);
-            let empty = to_wchar("");
-            SetWindowTextW(self.hwnd, PWSTR(empty.as_ptr() as _));
+            let text = if let Some(keys) = keys {
+                to_wchar(keys.to_strings().join("+"))
+            } else {
+                to_wchar("")
+            };
+            SetWindowTextW(self.hwnd, PWSTR(text.as_ptr() as _));
+            self.result = Some(EditResult {
+                category,
+                item,
+                keys: keys.cloned().unwrap_or_default(),
+            });
         }
     }
 
     #[inline]
-    pub fn hide(&mut self) -> &Keys {
+    pub fn end(&mut self) -> Option<EditResult> {
         unsafe {
             SetFocus(GetParent(self.hwnd));
             ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_HIDE);
-            &self.keys
+            self.result.take()
         }
     }
 
@@ -111,13 +125,22 @@ unsafe extern "system" fn proc(
     let editor = (data_ptr as *mut Editor).as_mut().unwrap();
     match msg {
         WM_KEYDOWN | WM_SYSKEYDOWN => {
+            let result = editor.result.as_mut().unwrap();
             get_keyboard_state(&mut editor.input_keys);
-            editor.keys.keyboard_state(&editor.input_keys);
-            let keys = to_wchar(&editor.keys.to_strings().join("+"));
+            result.keys.keyboard_state(&editor.input_keys);
+            let keys = to_wchar(result.keys.to_strings().join("+"));
             SetWindowTextW(editor.hwnd, PWSTR(keys.as_ptr() as _));
             LRESULT(0)
         }
         WM_CHAR => LRESULT(0),
+        WM_LBUTTONDOWN => {
+            PostMessageW(GetParent(GetParent(editor.hwnd)), WM_KEY_CONFIG_EDIT_APPLY, WPARAM(0), LPARAM(0));
+            LRESULT(0)
+        }
+        WM_RBUTTONDOWN => {
+            PostMessageW(GetParent(GetParent(editor.hwnd)), WM_KEY_CONFIG_EDIT_CANCEL, WPARAM(0), LPARAM(0));
+            LRESULT(0)
+        },
         _ => DefSubclassProc(hwnd, msg, wparam, lparam),
     }
 }

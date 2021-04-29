@@ -2,6 +2,7 @@
 
 mod application;
 mod editor;
+mod popup_menu;
 mod shortcut_list;
 mod side_menu;
 
@@ -13,6 +14,7 @@ use bindings::Windows::Win32::{
 };
 use editor::*;
 use key_map::Keys;
+use popup_menu::*;
 use shortcut_list::*;
 use side_menu::*;
 
