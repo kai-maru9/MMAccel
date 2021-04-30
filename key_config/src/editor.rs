@@ -73,12 +73,12 @@ impl Editor {
     }
 
     #[inline]
-    pub fn begin(&mut self, rc: &RECT, category: usize, item: usize, keys: Option<&Keys>) {
+    pub fn begin(&mut self, rc: &RECT, category: usize, item: usize, keys: &Keys) {
         unsafe {
             MoveWindow(self.hwnd, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
             ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_SHOW);
             SetFocus(self.hwnd);
-            let text = if let Some(keys) = keys {
+            let text = if !keys.is_empty() {
                 to_wchar(keys.to_strings().join("+"))
             } else {
                 to_wchar("")
@@ -87,7 +87,7 @@ impl Editor {
             self.result = Some(EditResult {
                 category,
                 item,
-                keys: keys.cloned().unwrap_or_default(),
+                keys: keys.clone(),
             });
         }
     }
@@ -145,8 +145,10 @@ unsafe extern "system" fn proc(
             let result = editor.result.as_mut().unwrap();
             get_keyboard_state(&mut editor.input_keys);
             result.keys.keyboard_state(&editor.input_keys);
-            let keys = to_wchar(result.keys.to_strings().join("+"));
-            SetWindowTextW(editor.hwnd, PWSTR(keys.as_ptr() as _));
+            if !result.keys.is_empty() {
+                let keys = to_wchar(result.keys.to_strings().join("+"));
+                SetWindowTextW(editor.hwnd, PWSTR(keys.as_ptr() as _));
+            }
             LRESULT(0)
         }
         WM_CHAR => LRESULT(0),

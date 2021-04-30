@@ -124,7 +124,7 @@ impl ShortcutList {
     }
 
     #[inline]
-    pub fn push(&mut self, name: impl AsRef<str>, keys: Option<&Keys>) {
+    pub fn push(&mut self, name: impl AsRef<str>, keys: &Keys) {
         unsafe {
             let name = to_wchar(name.as_ref());
             let item = LVITEMW {
@@ -141,9 +141,9 @@ impl ShortcutList {
     }
 
     #[inline]
-    pub fn set_keys(&mut self, index: usize, keys: Option<&Keys>) {
+    pub fn set_keys(&mut self, index: usize, keys: &Keys) {
         unsafe {
-            let text = if let Some(keys) = keys {
+            let text = if !keys.is_empty() {
                 to_wchar(&keys.to_strings().join("+"))
             } else {
                 to_wchar("")

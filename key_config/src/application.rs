@@ -22,7 +22,7 @@ where
 struct Item {
     id: String,
     name: String,
-    keys: Option<Keys>,
+    keys: Keys,
 }
 
 #[derive(Debug)]
@@ -79,7 +79,8 @@ impl KeyTable {
                             .map(|v| v.as_u64().map(|v| v as u32))
                             .collect::<Option<Vec<_>>>()
                     })
-                    .map(|a| Keys::from_slice(&a));
+                    .map(|a| Keys::from_slice(&a))
+                    .unwrap_or_default();
                 v.push(Item {
                     id: id.to_string(),
                     name: name.to_string(),
@@ -100,7 +101,13 @@ impl KeyTable {
             .0
             .iter()
             .flat_map(|cat| &cat.items)
-            .filter_map(|item| item.keys.as_ref().map(|keys| (&item.id, keys)))
+            .filter_map(|item| {
+                if item.keys.is_empty() {
+                    None
+                } else {
+                    Some((&item.id, &item.keys))
+                }
+            })
         {
             v.insert(elem.0, elem.1.clone());
         }
@@ -113,12 +120,12 @@ impl KeyTable {
     }
 
     #[inline]
-    fn get(&self, category: usize, item: usize) -> Option<&Keys> {
-        (self.0)[category].items[item].keys.as_ref()
+    fn get(&self, category: usize, item: usize) -> &Keys {
+        &(self.0)[category].items[item].keys
     }
 
     #[inline]
-    fn set_keys(&mut self, category: usize, item: usize, keys: Option<Keys>) {
+    fn set_keys(&mut self, category: usize, item: usize, keys: Keys) {
         (self.0)[category].items[item].keys = keys;
     }
 }
@@ -232,7 +239,7 @@ impl Application {
         key_table[0]
             .items
             .iter()
-            .for_each(|item| shortcut_list.push(&item.name, item.keys.as_ref()));
+            .for_each(|item| shortcut_list.push(&item.name, &item.keys));
         let editor = Editor::new(shortcut_list.handle())?;
         let mut app = Box::new(Self {
             settings,
@@ -251,9 +258,9 @@ impl Application {
         Ok(app)
     }
 
-    fn update_keys(&mut self, category: usize, item: usize, keys: Option<Keys>) {
+    fn update_keys(&mut self, category: usize, item: usize, keys: Keys) {
         if category == self.side_menu.current_index() {
-            self.shortcut_list.set_keys(item, keys.as_ref());
+            self.shortcut_list.set_keys(item, &keys);
         }
         self.key_table.set_keys(category, item, keys);
         self.key_table.to_file("key_map.json").ok();
@@ -263,7 +270,7 @@ impl Application {
     fn update_shortcut_list(&mut self) {
         let category = self.side_menu.current_index();
         for (index, item) in self.key_table[category].items.iter().enumerate() {
-            if item.keys.is_none() {
+            if item.keys.is_empty() {
                 self.shortcut_list.set_dup(index, None);
                 continue;
             }
@@ -271,7 +278,7 @@ impl Application {
                 .key_table
                 .iter()
                 .flat_map(|cat| &cat.items)
-                .filter(|i| i.id != item.id && i.keys.is_some() && i.keys == item.keys)
+                .filter(|i| i.id != item.id && !i.keys.is_empty() && i.keys == item.keys)
                 .map(|i| i.name.as_str())
                 .collect::<Vec<_>>();
             if dup.is_empty() {
@@ -338,7 +345,7 @@ unsafe extern "system" fn main_window_proc(
                 if nlv.uNewState & LVIS_SELECTED != 0 {
                     app.shortcut_list.clear();
                     for item in app.key_table[app.side_menu.current_index()].items.iter() {
-                        app.shortcut_list.push(&item.name, item.keys.as_ref());
+                        app.shortcut_list.push(&item.name, &item.keys);
                     }
                     app.update_shortcut_list();
                 }
@@ -370,7 +377,7 @@ unsafe extern "system" fn main_window_proc(
                     NM_CLICK => {
                         if app.editor.is_visible() {
                             if let Some(ret) = app.editor.end() {
-                                app.update_keys(ret.category, ret.item, Some(ret.keys));
+                                app.update_keys(ret.category, ret.item, ret.keys);
                             }
                         }
                     }
@@ -421,14 +428,14 @@ unsafe extern "system" fn main_window_proc(
         }
         WM_COMMAND => {
             if (wparam.0 & 0xffff) as u32 == IDM_MENU_DETACH {
-                app.update_keys(app.popup_menu.category(), app.popup_menu.item(), None);
+                app.update_keys(app.popup_menu.category(), app.popup_menu.item(), Keys::new());
             }
             LRESULT(0)
         }
         WM_KEY_CONFIG_EDIT_APPLY => {
             if app.editor.is_visible() {
                 if let Some(ret) = app.editor.end() {
-                    app.update_keys(ret.category, ret.item, Some(ret.keys));
+                    app.update_keys(ret.category, ret.item, ret.keys);
                 }
             }
             LRESULT(0)
