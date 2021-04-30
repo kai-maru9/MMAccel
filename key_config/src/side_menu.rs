@@ -9,7 +9,7 @@ impl SideMenu {
         parent: &wita::Window,
         pt: impl Into<wita::LogicalPosition<i32>>,
         size: impl Into<wita::LogicalSize<i32>>,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self, Error> {
         let dpi = parent.dpi();
         let pt = pt.into().to_physical(dpi as _);
         let size = size.into().to_physical(dpi as _);
@@ -46,7 +46,7 @@ impl SideMenu {
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(0), LPARAM(&column as *const _ as _));
             let theme = to_wchar("Explorer");
-            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok()?;
+            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok().ok();
             Ok(Self { hwnd })
         }
     }

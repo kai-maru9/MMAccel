@@ -10,7 +10,7 @@ impl ShortcutList {
         pt: impl Into<wita::LogicalPosition<i32>>,
         size: impl Into<wita::LogicalSize<i32>>,
         columns_size: [i32; 2],
-    ) -> windows::Result<Self> {
+    ) -> Result<Self, Error> {
         let dpi = parent.dpi() as i32;
         let pt = pt.into().to_physical(dpi);
         let size = size.into().to_physical(dpi);
@@ -35,7 +35,7 @@ impl ShortcutList {
                 std::ptr::null_mut(),
             );
             if hwnd == HWND::NULL {
-                return Err(get_last_error().into());
+                return Err(Error::hresult(get_last_error().into(), "CreateWindowEx"));
             }
             let ex_style = SendMessageW(hwnd, LVM_GETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(0)).0 as u32;
             let ex_style =
@@ -84,7 +84,7 @@ impl ShortcutList {
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(2), LPARAM(&column as *const _ as _));
             let theme = to_wchar("Explorer");
-            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok()?;
+            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok().ok();
             Ok(Self { hwnd })
         }
     }

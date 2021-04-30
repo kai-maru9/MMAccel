@@ -34,13 +34,13 @@ pub struct EditResult {
 
 pub struct Editor {
     hwnd: HWND,
-    font: HFONT,
+    font: Option<HFONT>,
     input_keys: Vec<u8>,
     result: Option<EditResult>,
 }
 
 impl Editor {
-    pub fn new(parent: HWND) -> windows::Result<Box<Self>> {
+    pub fn new(parent: HWND) -> Result<Box<Self>, Error> {
         let class_name = to_wchar("EDIT");
         unsafe {
             let hwnd = CreateWindowExW(
@@ -57,11 +57,13 @@ impl Editor {
                 HINSTANCE::NULL,
                 std::ptr::null_mut(),
             );
-            let font = theme_font(hwnd)?;
-            SendMessageW(hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
+            let font = theme_font(hwnd);
+            if let Ok(font) = font.as_ref() {
+                SendMessageW(hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
+            }
             let editor = Box::new(Self {
                 hwnd,
-                font,
+                font: font.ok(),
                 input_keys: vec![0; 256],
                 result: None,
             });
@@ -107,10 +109,14 @@ impl Editor {
     #[inline]
     pub fn resize(&mut self) {
         unsafe {
-            let font = theme_font(self.hwnd).unwrap();
-            SendMessageW(self.hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
-            DeleteObject(self.font);
-            self.font = font;
+            let font = theme_font(self.hwnd);
+            if let Ok(font) = font {
+                SendMessageW(self.hwnd, WM_SETFONT, WPARAM(font.0 as _), LPARAM(0));
+                if let Some(font) = self.font {
+                    DeleteObject(font);
+                }
+                self.font = Some(font);
+            }
         }
     }
 }
@@ -118,8 +124,8 @@ impl Editor {
 impl Drop for Editor {
     fn drop(&mut self) {
         unsafe {
-            if !self.font.is_null() {
-                DeleteObject(self.font);
+            if let Some(font) = self.font {
+                DeleteObject(font);
             }
         }
     }

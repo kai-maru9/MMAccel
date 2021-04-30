@@ -10,12 +10,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.40"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28b2cd92db5cbd74e8e5028f7e27dd7aa3090e89e4f2a197cc7c8dfb69c7063b"
-
-[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -114,9 +108,8 @@ checksum = "dd25036021b0de88a0aff6b850051563c6516d0bf53f8638938edbb9de732736"
 
 [[package]]
 name = "key_config"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
- "anyhow",
  "bindings",
  "d3d9",
  "embed-resource",
@@ -126,6 +119,7 @@ dependencies = [
  "once_cell",
  "serde",
  "serde_json",
+ "thiserror",
  "windows",
  "wita",
 ]

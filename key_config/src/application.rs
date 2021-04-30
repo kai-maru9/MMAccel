@@ -1,5 +1,23 @@
 use crate::*;
 
+#[inline]
+fn from_file<T>(path: impl AsRef<std::path::Path>) -> Result<T, Error> 
+where
+    T: serde::de::DeserializeOwned
+{
+    let file = std::fs::File::open(&path).map_err(|e| Error::file(e, &path))?;
+    serde_json::from_reader(std::io::BufReader::new(file)).map_err(|e| Error::json_file(e, path))
+}
+
+#[inline]
+fn to_file<T>(path: impl AsRef<std::path::Path>, value: &T) -> Result<(), Error> 
+where
+    T: serde::Serialize
+{
+    let file = std::fs::File::create(&path)?;
+    serde_json::to_writer_pretty(std::io::BufWriter::new(file), value).map_err(|e| Error::json_file(e, path))
+}
+
 #[derive(Debug)]
 struct Item {
     id: String,
@@ -21,50 +39,38 @@ impl KeyTable {
         mmd_map_path: impl AsRef<std::path::Path>,
         order_path: impl AsRef<std::path::Path>,
         key_map_path: impl AsRef<std::path::Path>,
-    ) -> std::io::Result<Self> {
-        const INVALID_DATA: std::io::ErrorKind = std::io::ErrorKind::InvalidData;
-        let mmd_map: serde_json::Value = {
-            let file = std::fs::File::open(mmd_map_path)?;
-            serde_json::from_reader(std::io::BufReader::new(file))?
+    ) -> Result<Self, Error> {
+        let mmd_map: serde_json::Value = from_file(mmd_map_path)?;
+        let order: serde_json::Value = from_file(order_path)?;
+        let key_map: serde_json::Value = match from_file(&key_map_path) {
+            Ok(v) => v,
+            Err(Error::FileNotFound(_)) => {
+                let key_map = KeyMap::default();
+                to_file(key_map_path, &key_map)?;
+                serde_json::to_value(&key_map).unwrap()
+            }
+            Err(e) => return Err(e),
         };
-        let order: serde_json::Value = {
-            let file = std::fs::File::open(order_path)?;
-            serde_json::from_reader(std::io::BufReader::new(file))?
-        };
-        let key_map: serde_json::Value = {
-            let file = match std::fs::File::open(key_map_path.as_ref()) {
-                Ok(file) => file,
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                    {
-                        let file = std::fs::File::create(key_map_path.as_ref())?;
-                        serde_json::to_writer_pretty(std::io::BufWriter::new(file), &KeyMap::default())?;
-                    }
-                    std::fs::File::open(key_map_path.as_ref())?
-                }
-                Err(e) => return Err(e),
-            };
-            serde_json::from_reader(std::io::BufReader::new(file))?
-        };
-        let mmd_map = mmd_map.as_object().ok_or(INVALID_DATA)?;
-        let order = order.as_object().ok_or(INVALID_DATA)?;
-        let category_order = order.get("categories").and_then(|a| a.as_array()).ok_or(INVALID_DATA)?;
-        let item_order = order.get("items").and_then(|a| a.as_object()).ok_or(INVALID_DATA)?;
+        let mmd_map = mmd_map.as_object().ok_or(Error::InvalidData)?;
+        let order = order.as_object().ok_or(Error::InvalidData)?;
+        let category_order = order.get("categories").and_then(|a| a.as_array()).ok_or(Error::InvalidData)?;
+        let item_order = order.get("items").and_then(|a| a.as_object()).ok_or(Error::InvalidData)?;
         let mut table = vec![];
         for category in category_order.iter() {
-            let category = category.as_str().ok_or(INVALID_DATA)?.to_string();
-            let item = mmd_map.get(&category).and_then(|a| a.as_object()).ok_or(INVALID_DATA)?;
+            let category = category.as_str().ok_or(Error::InvalidData)?.to_string();
+            let item = mmd_map.get(&category).and_then(|a| a.as_object()).ok_or(Error::InvalidData)?;
             let item_order = item_order
                 .get(&category)
                 .and_then(|a| a.as_array())
-                .ok_or(INVALID_DATA)?;
+                .ok_or(Error::InvalidData)?;
             let mut v = vec![];
             for id in item_order.iter() {
-                let id = id.as_str().ok_or(INVALID_DATA)?;
+                let id = id.as_str().ok_or(Error::InvalidData)?;
                 let name = item
                     .get(id)
                     .and_then(|a| a.as_array())
                     .and_then(|a| a[0].as_str())
-                    .ok_or(INVALID_DATA)?;
+                    .ok_or(Error::InvalidData)?;
                 let keys = key_map
                     .get(id)
                     .and_then(|v| v.as_array())
@@ -88,8 +94,7 @@ impl KeyTable {
         Ok(Self(table))
     }
 
-    fn to_file(&self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
-        let file = std::fs::File::create(path)?;
+    fn to_file(&self, path: impl AsRef<std::path::Path>) -> Result<(), Error> {
         let mut v = KeyMap::new();
         for elem in self
             .0
@@ -99,8 +104,7 @@ impl KeyTable {
         {
             v.insert(elem.0, elem.1.clone());
         }
-        serde_json::to_writer_pretty(std::io::BufWriter::new(file), &v)?;
-        Ok(())
+        to_file(path, &v)
     }
 
     #[inline]
@@ -136,19 +140,17 @@ struct Settings {
 }
 
 impl Settings {
-    fn from_file() -> anyhow::Result<Self> {
-        let settings = match std::fs::File::open(SETTINGS_FILE_NAME) {
-            Ok(file) => serde_json::from_reader(std::io::BufReader::new(file))?,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Self::default(),
-            Err(e) => return Err(e.into()),
+    fn from_file() -> Result<Self, Error> {
+        let settings = match from_file(SETTINGS_FILE_NAME) {
+            Ok(v) => v,
+            Err(Error::FileNotFound(_)) => Self::default(),
+            Err(e) => return Err(e),
         };
         Ok(settings)
     }
 
-    fn to_file(&self) -> anyhow::Result<()> {
-        let file = std::fs::File::create(SETTINGS_FILE_NAME)?;
-        serde_json::to_writer_pretty(std::io::BufWriter::new(file), self)?;
-        Ok(())
+    fn to_file(&self) -> Result<(), Error> {
+        to_file(SETTINGS_FILE_NAME, self)
     }
 }
 
@@ -204,7 +206,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn new() -> anyhow::Result<Box<Self>> {
+    pub fn new() -> Result<Box<Self>, Error> {
         let settings = Settings::from_file()?;
         let key_table = KeyTable::from_file("mmd_map.json", "order.json", "key_map.json")?;
         let main_window = wita::WindowBuilder::new()
@@ -244,7 +246,7 @@ impl Application {
         unsafe {
             let hwnd = HWND(app.main_window.raw_handle() as _);
             let app_ptr = app.as_mut() as *mut Self;
-            SetWindowSubclass(hwnd, Some(main_window_proc), app_ptr as _, app_ptr as _).ok()?;
+            SetWindowSubclass(hwnd, Some(main_window_proc), app_ptr as _, app_ptr as _);
         }
         Ok(app)
     }
