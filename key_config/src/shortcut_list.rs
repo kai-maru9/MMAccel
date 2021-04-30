@@ -203,8 +203,7 @@ impl ShortcutList {
             for (i, &cx) in columns_size.iter().enumerate() {
                 let cx = cx * dpi / 96;
                 let column = LVCOLUMNW {
-                    mask: LVCOLUMNW_MASK::LVCF_WIDTH
-                        | LVCOLUMNW_MASK::LVCF_MINWIDTH,
+                    mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_MINWIDTH,
                     cx,
                     cxMin: cx,
                     ..Default::default()

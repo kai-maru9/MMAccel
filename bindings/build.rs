@@ -12,6 +12,7 @@ fn main() {
             GetModuleHandleA,
             GetModuleHandleW,
             VirtualProtect,
+            CreateEventW,
             MAX_PATH,
             BOOL,
             TRUE,
@@ -39,6 +40,15 @@ fn main() {
         Windows::Win32::Direct3D9::{
             D3DMATERIAL9,
             D3DMATRIX,
+        },
+        Windows::Win32::WindowsProgramming::{
+            CloseHandle,
+        },
+        Windows::Win32::FileSystem::{
+            CreateFileW,
+            ReadDirectoryChangesW,
+            CancelSynchronousIo,
+            FILE_NOTIFY_INFORMATION,
         },
         Windows::Win32::HiDpi::*,
         Windows::Win32::Gdi::*,

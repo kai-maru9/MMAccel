@@ -2,6 +2,7 @@
 #![allow(clippy::missing_safety_doc)]
 
 mod context;
+mod file_monitor;
 mod handler;
 mod injection;
 mod menu;
@@ -9,8 +10,11 @@ mod mmd;
 mod mmd_map;
 
 use bindings::wrapper::*;
-use bindings::Windows::Win32::{Debug::*, KeyboardAndMouseInput::*, SystemServices::*, WindowsAndMessaging::*};
+use bindings::Windows::Win32::{
+    Debug::*, FileSystem::*, KeyboardAndMouseInput::*, SystemServices::*, WindowsAndMessaging::*, WindowsProgramming::*,
+};
 use context::*;
+use file_monitor::*;
 use injection::*;
 use menu::*;
 use once_cell::sync::OnceCell;

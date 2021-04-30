@@ -302,7 +302,7 @@ impl wita::EventHandler for Box<Application> {
             [SHORTCUT_MENU_NAME_COLUMN_WIDTH, SHORTCUT_MENU_KEYS_COLUMN_WIDTH],
         );
     }
-    
+
     fn dpi_changed(&mut self, _: &wita::Window) {
         self.editor.resize();
     }

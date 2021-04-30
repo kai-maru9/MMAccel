@@ -103,7 +103,7 @@ impl Editor {
     pub fn is_visible(&self) -> bool {
         unsafe { IsWindowVisible(self.hwnd) == TRUE }
     }
-    
+
     #[inline]
     pub fn resize(&mut self) {
         unsafe {

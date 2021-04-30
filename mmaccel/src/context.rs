@@ -3,6 +3,7 @@ use bindings::wrapper::*;
 use handler::Handler;
 use key_map::KeyMap;
 use mmd_map::MmdMap;
+use std::sync::{atomic, atomic::AtomicBool, Arc};
 
 struct MmdWindow {
     window: HWND,
@@ -24,18 +25,21 @@ fn version_info(hwnd: HWND) {
     message_box(Some(hwnd), text, "", MESSAGEBOX_STYLE::MB_OK);
 }
 
+const MMD_MAP_PATH: &str = "MMAccel/mmd_map.json";
+const KEY_MAP_PATH: &str = "MMAccel/key_map.json";
+
 pub struct Context {
     _call_window_proc_ret: HookHandle,
     _get_message_handle: HookHandle,
     mmd_window: Option<MmdWindow>,
     handler: Handler,
+    file_monitor: FileMonitor,
+    latest_key_map: Arc<AtomicBool>,
 }
 
 impl Context {
     #[inline]
     pub fn new() -> std::io::Result<Self> {
-        const MMD_MAP_PATH: &str = "MMAccel/mmd_map.json";
-        const KEY_MAP_PATH: &str = "MMAccel/key_map.json";
         let mmd_map = MmdMap::from_file(MMD_MAP_PATH)?;
         let key_map = KeyMap::from_file(KEY_MAP_PATH).unwrap_or_else(|_| {
             let m = KeyMap::default();
@@ -46,6 +50,7 @@ impl Context {
             m
         });
         let handler = Handler::new(mmd_map, key_map);
+        let file_monitor = FileMonitor::new();
         Ok(Self {
             _call_window_proc_ret: HookHandle::new(
                 WINDOWS_HOOK_ID::WH_CALLWNDPROCRET,
@@ -59,6 +64,8 @@ impl Context {
             ),
             mmd_window: None,
             handler,
+            file_monitor,
+            latest_key_map: Arc::new(AtomicBool::new(true)),
         })
     }
 
@@ -67,8 +74,21 @@ impl Context {
             WM_CREATE if get_class_name(data.hwnd) == "Polygon Movie Maker" => {
                 log::debug!("Created MainWindow");
                 self.mmd_window = Some(MmdWindow::new(data.hwnd));
+                let latest_key_map = self.latest_key_map.clone();
+                let mmd_window = self.mmd_window.as_ref().unwrap().window;
+                self.file_monitor.start("MMAccel", move |path| unsafe {
+                    if path.file_name() == Some(std::ffi::OsStr::new("key_map.json")) {
+                        latest_key_map.store(false, atomic::Ordering::SeqCst);
+                        PostMessageW(mmd_window, WM_APP, WPARAM(0), LPARAM(0));
+                        log::debug!("update key_map.json");
+                    }
+                });
             }
             WM_DESTROY if self.mmd_window.as_ref().map_or(false, |mw| mw.window == data.hwnd) => {
+                if let Some(jh) = self.file_monitor.stop() {
+                    jh.join().ok();
+                    log::debug!("stop FileMonitor");
+                }
                 log::debug!("Destroyed MainWindow");
             }
             _ => {}
@@ -92,6 +112,23 @@ impl Context {
             }
             WM_KEYUP | WM_SYSKEYUP => {
                 self.handler.key_up(data.wParam.0 as u32);
+            }
+            WM_APP => {
+                if !self.latest_key_map.swap(true, atomic::Ordering::SeqCst) {
+                    let mmd_map = MmdMap::from_file(MMD_MAP_PATH);
+                    if mmd_map.is_err() {
+                        return;
+                    }
+                    let key_map = KeyMap::from_file(KEY_MAP_PATH).unwrap_or_else(|_| {
+                        let m = KeyMap::default();
+                        if let Ok(file) = std::fs::File::create(KEY_MAP_PATH) {
+                            serde_json::to_writer_pretty(std::io::BufWriter::new(file), &m).ok();
+                            log::debug!("written key_map.json");
+                        }
+                        m
+                    });
+                    self.handler = Handler::new(mmd_map.unwrap(), key_map);
+                }
             }
             _ => {}
         }
