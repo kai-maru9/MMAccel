@@ -100,7 +100,12 @@ impl Context {
             WM_COMMAND => {
                 if let Some(mmd_window) = self.mmd_window.as_ref() {
                     match mmd_window.menu.recv_command(data.wParam) {
-                        Some(MenuItem::LaunchConfig) => println!("launch"),
+                        Some(MenuItem::LaunchConfig) => {
+                            std::process::Command::new("MMAccel/key_config.exe")
+                                .current_dir("MMAccel")
+                                .spawn()
+                                .ok();
+                        }
                         Some(MenuItem::Version) => version_info(mmd_window.window),
                         _ => {}
                     }
