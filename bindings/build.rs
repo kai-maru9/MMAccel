@@ -48,6 +48,8 @@ fn main() {
             CreateFileW,
             ReadDirectoryChangesW,
             CancelSynchronousIo,
+            ReadFile,
+            WriteFile,
             FILE_NOTIFY_INFORMATION,
         },
         Windows::Win32::HiDpi::*,

@@ -35,6 +35,7 @@ pub struct Context {
     handler: Handler,
     file_monitor: FileMonitor,
     latest_key_map: Arc<AtomicBool>,
+    key_config: Option<HWND>,
 }
 
 impl Context {
@@ -66,6 +67,7 @@ impl Context {
             handler,
             file_monitor,
             latest_key_map: Arc::new(AtomicBool::new(true)),
+            key_config: None,
         })
     }
 
@@ -85,6 +87,13 @@ impl Context {
                 });
             }
             WM_DESTROY if self.mmd_window.as_ref().map_or(false, |mw| mw.window == data.hwnd) => {
+                if let Some(kc) = self.key_config {
+                    unsafe {
+                        if IsWindow(kc) == TRUE {
+                            PostMessageW(self.key_config, WM_CLOSE, WPARAM(0), LPARAM(0));
+                        }
+                    }
+                }
                 if let Some(jh) = self.file_monitor.stop() {
                     jh.join().ok();
                     log::debug!("stop FileMonitor");
@@ -101,10 +110,22 @@ impl Context {
                 if let Some(mmd_window) = self.mmd_window.as_ref() {
                     match mmd_window.menu.recv_command(data.wParam) {
                         Some(MenuItem::LaunchConfig) => {
-                            std::process::Command::new("MMAccel/key_config.exe")
+                            let key_config_process = std::process::Command::new("MMAccel/key_config.exe")
                                 .current_dir("MMAccel")
-                                .spawn()
-                                .ok();
+                                .arg("--mmd")
+                                .stdout(std::process::Stdio::piped())
+                                .spawn();
+                            if let Ok(process) = key_config_process {
+                                use std::os::windows::io::AsRawHandle;
+                                let handle = HANDLE(process.stdout.as_ref().unwrap().as_raw_handle() as _);
+                                let mut p = 0u64;
+                                let mut byte = 0;
+                                unsafe {
+                                    if ReadFile(handle, &mut p as *mut _ as _, std::mem::size_of::<u64>() as _, &mut byte, std::ptr::null_mut()) != FALSE {
+                                        self.key_config = Some(HWND(p as _));
+                                    }
+                                }
+                            }
                         }
                         Some(MenuItem::Version) => version_info(mmd_window.window),
                         _ => {}

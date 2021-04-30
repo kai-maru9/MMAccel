@@ -215,7 +215,6 @@ pub struct Application {
 impl Application {
     pub fn new() -> Result<Box<Self>, Error> {
         let settings = Settings::from_file()?;
-        let key_table = KeyTable::from_file("mmd_map.json", "order.json", "key_map.json")?;
         let main_window = wita::WindowBuilder::new()
             .title("MMAccel キー設定")
             .position(settings.window_position)
@@ -226,6 +225,17 @@ impl Application {
                     .has_minimize_box(false),
             )
             .build()?;
+        if std::env::args().any(|arg| arg == "--mmd") {
+            use std::os::windows::io::AsRawHandle;
+            let stdout = std::io::stdout();
+            let handle = HANDLE(stdout.lock().as_raw_handle() as _);
+            let p = main_window.raw_handle() as u64;
+            let mut byte = 0;
+            unsafe {
+                WriteFile(handle, &p as *const _ as _, std::mem::size_of::<u64>() as _, &mut byte, std::ptr::null_mut());
+            }
+        }
+        let key_table = KeyTable::from_file("mmd_map.json", "order.json", "key_map.json")?;
         let layout = calc_layout(settings.window_size);
         let mut side_menu = SideMenu::new(&main_window, layout.side_menu.position, layout.side_menu.size)?;
         key_table.iter().for_each(|cat| side_menu.push(&cat.name));
