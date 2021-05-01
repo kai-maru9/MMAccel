@@ -5,17 +5,67 @@ use key_map::KeyMap;
 use mmd_map::MmdMap;
 use std::sync::{atomic, atomic::AtomicBool, Arc};
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum MenuItem {
+    LaunchConfig,
+    RaiseTimerResolution(bool),
+    Version,
+}
+
+impl MenuCommand for MenuItem {
+    fn from_command(v: std::mem::Discriminant<Self>, item_type: MenuItemType) -> Self {
+        match v {
+            _ if v == std::mem::discriminant(&Self::LaunchConfig) => {
+                Self::LaunchConfig
+            }
+            _ if v == std::mem::discriminant(&Self::RaiseTimerResolution(false)) => {
+                Self::RaiseTimerResolution(item_type.as_with_check().unwrap())
+            }
+            _ if v == std::mem::discriminant(&Self::Version) => {
+                Self::Version
+            }
+            _ => unimplemented!(),
+        }
+    }
+}
+
 struct MmdWindow {
     window: HWND,
-    menu: Menu,
+    menu: Menu<MenuItem>,
 }
 
 impl MmdWindow {
     #[inline]
-    fn new(window: HWND) -> Self {
+    fn new(window: HWND, settings: &Settings) -> Self {
         Self {
             window,
-            menu: Menu::new(window),
+            menu: MenuBuilder::new(window, "MMAccel")
+                .item(&MenuItem::LaunchConfig, "キー設定")
+                .separator()
+                .with_check(&MenuItem::RaiseTimerResolution(true), "タイマーの精度を上げる", settings.raise_timer_resolution)
+                .separator()
+                .item(&MenuItem::Version, "バージョン情報")
+                .build(),
+        }
+    }
+}
+
+struct TimePeriod(u32);
+
+impl TimePeriod {
+    #[inline]
+    fn new(n: u32) -> Self {
+        unsafe {
+            timeBeginPeriod(n);
+            Self(n)
+        }
+    }
+}
+
+impl Drop for TimePeriod {
+    fn drop(&mut self) {
+        unsafe {
+            timeEndPeriod(self.0);
         }
     }
 }
@@ -25,10 +75,41 @@ fn version_info(hwnd: HWND) {
     message_box(Some(hwnd), text, "", MESSAGEBOX_STYLE::MB_OK);
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct Settings {
+    raise_timer_resolution: bool,
+}
+
+impl Settings {
+    const PATH: &'static str = "MMAccel/settings.json";
+    
+    fn from_file() -> Self {
+        match std::fs::File::open(Self::PATH) {
+            Ok(file) => serde_json::from_reader(std::io::BufReader::new(file)).unwrap_or_default(),
+            Err(_) => Settings::default(),
+        }
+    }
+    
+    fn to_file(&self) {
+        if let Ok(file) = std::fs::File::create(Self::PATH) {
+            serde_json::to_writer_pretty(std::io::BufWriter::new(file), self).ok();
+        }
+    }
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            raise_timer_resolution: true,
+        }
+    }
+}
+
 const MMD_MAP_PATH: &str = "MMAccel/mmd_map.json";
 const KEY_MAP_PATH: &str = "MMAccel/key_map.json";
 
 pub struct Context {
+    settings: Settings,
     _call_window_proc_ret: HookHandle,
     _get_message_handle: HookHandle,
     mmd_window: Option<MmdWindow>,
@@ -36,11 +117,13 @@ pub struct Context {
     file_monitor: FileMonitor,
     latest_key_map: Arc<AtomicBool>,
     key_config: Option<HWND>,
+    time_period: Option<TimePeriod>,
 }
 
 impl Context {
     #[inline]
     pub fn new() -> std::io::Result<Self> {
+        let settings = Settings::from_file();
         let mmd_map = MmdMap::from_file(MMD_MAP_PATH)?;
         let key_map = KeyMap::from_file(KEY_MAP_PATH).unwrap_or_else(|_| {
             let m = KeyMap::default();
@@ -52,7 +135,9 @@ impl Context {
         });
         let handler = Handler::new(mmd_map, key_map);
         let file_monitor = FileMonitor::new();
+        let time_period = settings.raise_timer_resolution.then(|| TimePeriod::new(1));
         Ok(Self {
+            settings,
             _call_window_proc_ret: HookHandle::new(
                 WINDOWS_HOOK_ID::WH_CALLWNDPROCRET,
                 Some(hook_call_window_proc_ret),
@@ -68,6 +153,7 @@ impl Context {
             file_monitor,
             latest_key_map: Arc::new(AtomicBool::new(true)),
             key_config: None,
+            time_period,
         })
     }
 
@@ -75,7 +161,7 @@ impl Context {
         match data.message {
             WM_CREATE if get_class_name(data.hwnd) == "Polygon Movie Maker" => {
                 log::debug!("created MainWindow");
-                self.mmd_window = Some(MmdWindow::new(data.hwnd));
+                self.mmd_window = Some(MmdWindow::new(data.hwnd, &self.settings));
                 let latest_key_map = self.latest_key_map.clone();
                 let mmd_window = self.mmd_window.as_ref().unwrap().window;
                 self.file_monitor.start("MMAccel", move |path| unsafe {
@@ -134,6 +220,13 @@ impl Context {
                                 }
                             }
                         }
+                        Some(MenuItem::RaiseTimerResolution(b)) => {
+                            self.time_period = if b {
+                                Some(TimePeriod::new(1))
+                            } else {
+                                None
+                            };
+                        }
                         Some(MenuItem::Version) => version_info(mmd_window.window),
                         _ => {}
                     }
@@ -182,6 +275,8 @@ impl Context {
 
 impl Drop for Context {
     fn drop(&mut self) {
+        self.settings.raise_timer_resolution = self.time_period.is_some();
+        self.settings.to_file();
         log::debug!("drop Context");
     }
 }
