@@ -121,6 +121,20 @@ impl Keys {
         }
         v
     }
+    
+    #[inline]
+    pub fn is_included(&self, other: &Keys) -> bool {
+        let mut index = 0;
+        for x in other.0.iter() {
+            if *x == (self.0)[index] {
+                index += 1;
+                if index == self.0.len() {
+                    return true;
+                }
+            }
+        }
+        false
+    }
 }
 
 impl Default for Keys {

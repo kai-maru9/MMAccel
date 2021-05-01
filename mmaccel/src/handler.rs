@@ -164,12 +164,16 @@ impl Handler {
         }
     }
 
-    pub fn key_up(&mut self, vk: u32) {
-        self.input[vk as usize] &= 0x01;
-        self.input_keys.vk(vk);
-        if let Some(ItemKind::Key(k)) = self.handler.get(&self.input_keys) {
-            if let Some(ks) = self.key_states.get_mut(k) {
-                *ks = false;
+    pub fn key_up(&mut self, _vk: u32) {
+        get_keyboard_state(&mut self.input);
+        self.input_keys.keyboard_state(&self.input);
+        for (keys, kind) in self.handler.iter() {
+            if let ItemKind::Key(k) = kind {
+                if !keys.is_included(&self.input_keys) {
+                    if let Some(ks) = self.key_states.get_mut(k) {
+                        *ks = false;
+                    }
+                }
             }
         }
     }
