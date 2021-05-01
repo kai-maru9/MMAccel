@@ -3,6 +3,7 @@ name = "bindings"
 version = "0.1.0"
 authors = ["LNSEAB <691752+LNSEAB@users.noreply.github.com>"]
 edition = "2018"
+license = "MIT"
 
 [dependencies]
 windows = "0.9.1"

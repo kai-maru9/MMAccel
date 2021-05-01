@@ -3,6 +3,7 @@ name = "key_map"
 version = "0.1.0"
 authors = ["LNSEAB <691752+LNSEAB@users.noreply.github.com>"]
 edition = "2018"
+license = "MIT"
 
 [dependencies]
 bindings = { path = "../bindings" }
