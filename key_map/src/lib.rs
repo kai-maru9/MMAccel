@@ -121,7 +121,7 @@ impl Keys {
         }
         v
     }
-    
+
     #[inline]
     pub fn is_included(&self, other: &Keys) -> bool {
         let mut index = 0;
