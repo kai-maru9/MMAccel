@@ -360,14 +360,31 @@ unsafe extern "system" fn main_window_proc(
     match msg {
         WM_NOTIFY => {
             let nmhdr = (lparam.0 as *const NMHDR).as_ref().unwrap();
-            if nmhdr.hwndFrom == app.side_menu.handle() && nmhdr.code == LVN_ITEMCHANGED {
-                let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
-                if nlv.uNewState & LVIS_SELECTED != 0 {
-                    app.shortcut_list.clear();
-                    for item in app.key_table[app.side_menu.current_index()].items.iter() {
-                        app.shortcut_list.push(&item.name, &item.keys);
+            if nmhdr.hwndFrom == app.side_menu.handle() {
+                match nmhdr.code {
+                    LVN_ITEMCHANGED => {
+                        let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
+                        if app.editor.is_visible() {
+                            if let Some(ret) = app.editor.end() {
+                                app.update_keys(ret.category, ret.item, ret.keys);
+                            }
+                        }
+                        if nlv.uNewState & LVIS_SELECTED != 0 {
+                            app.shortcut_list.clear();
+                            for item in app.key_table[app.side_menu.current_index()].items.iter() {
+                                app.shortcut_list.push(&item.name, &item.keys);
+                            }
+                            app.update_shortcut_list();
+                        }
                     }
-                    app.update_shortcut_list();
+                    NM_SETFOCUS => {
+                        if app.editor.is_visible() {
+                            if let Some(ret) = app.editor.end() {
+                                app.update_keys(ret.category, ret.item, ret.keys);
+                            }
+                        }
+                    }
+                    _ => {}
                 }
                 LRESULT(0)
             } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
