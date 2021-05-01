@@ -121,7 +121,14 @@ impl Context {
                                 let mut p = 0u64;
                                 let mut byte = 0;
                                 unsafe {
-                                    if ReadFile(handle, &mut p as *mut _ as _, std::mem::size_of::<u64>() as _, &mut byte, std::ptr::null_mut()) != FALSE {
+                                    if ReadFile(
+                                        handle,
+                                        &mut p as *mut _ as _,
+                                        std::mem::size_of::<u64>() as _,
+                                        &mut byte,
+                                        std::ptr::null_mut(),
+                                    ) != FALSE
+                                    {
                                         self.key_config = Some(HWND(p as _));
                                     }
                                 }

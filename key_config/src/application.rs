@@ -1,18 +1,18 @@
 use crate::*;
 
 #[inline]
-fn from_file<T>(path: impl AsRef<std::path::Path>) -> Result<T, Error> 
+fn from_file<T>(path: impl AsRef<std::path::Path>) -> Result<T, Error>
 where
-    T: serde::de::DeserializeOwned
+    T: serde::de::DeserializeOwned,
 {
     let file = std::fs::File::open(&path).map_err(|e| Error::file(e, &path))?;
     serde_json::from_reader(std::io::BufReader::new(file)).map_err(|e| Error::json_file(e, path))
 }
 
 #[inline]
-fn to_file<T>(path: impl AsRef<std::path::Path>, value: &T) -> Result<(), Error> 
+fn to_file<T>(path: impl AsRef<std::path::Path>, value: &T) -> Result<(), Error>
 where
-    T: serde::Serialize
+    T: serde::Serialize,
 {
     let file = std::fs::File::create(&path)?;
     serde_json::to_writer_pretty(std::io::BufWriter::new(file), value).map_err(|e| Error::json_file(e, path))
@@ -53,12 +53,21 @@ impl KeyTable {
         };
         let mmd_map = mmd_map.as_object().ok_or(Error::InvalidData)?;
         let order = order.as_object().ok_or(Error::InvalidData)?;
-        let category_order = order.get("categories").and_then(|a| a.as_array()).ok_or(Error::InvalidData)?;
-        let item_order = order.get("items").and_then(|a| a.as_object()).ok_or(Error::InvalidData)?;
+        let category_order = order
+            .get("categories")
+            .and_then(|a| a.as_array())
+            .ok_or(Error::InvalidData)?;
+        let item_order = order
+            .get("items")
+            .and_then(|a| a.as_object())
+            .ok_or(Error::InvalidData)?;
         let mut table = vec![];
         for category in category_order.iter() {
             let category = category.as_str().ok_or(Error::InvalidData)?.to_string();
-            let item = mmd_map.get(&category).and_then(|a| a.as_object()).ok_or(Error::InvalidData)?;
+            let item = mmd_map
+                .get(&category)
+                .and_then(|a| a.as_object())
+                .ok_or(Error::InvalidData)?;
             let item_order = item_order
                 .get(&category)
                 .and_then(|a| a.as_array())
@@ -97,18 +106,13 @@ impl KeyTable {
 
     fn to_file(&self, path: impl AsRef<std::path::Path>) -> Result<(), Error> {
         let mut v = KeyMap::new();
-        for elem in self
-            .0
-            .iter()
-            .flat_map(|cat| &cat.items)
-            .filter_map(|item| {
-                if item.keys.is_empty() {
-                    None
-                } else {
-                    Some((&item.id, &item.keys))
-                }
-            })
-        {
+        for elem in self.0.iter().flat_map(|cat| &cat.items).filter_map(|item| {
+            if item.keys.is_empty() {
+                None
+            } else {
+                Some((&item.id, &item.keys))
+            }
+        }) {
             v.insert(elem.0, elem.1.clone());
         }
         to_file(path, &v)
@@ -232,7 +236,13 @@ impl Application {
             let p = main_window.raw_handle() as u64;
             let mut byte = 0;
             unsafe {
-                WriteFile(handle, &p as *const _ as _, std::mem::size_of::<u64>() as _, &mut byte, std::ptr::null_mut());
+                WriteFile(
+                    handle,
+                    &p as *const _ as _,
+                    std::mem::size_of::<u64>() as _,
+                    &mut byte,
+                    std::ptr::null_mut(),
+                );
             }
         }
         let key_table = KeyTable::from_file("mmd_map.json", "order.json", "key_map.json")?;

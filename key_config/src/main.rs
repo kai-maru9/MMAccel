@@ -2,26 +2,31 @@
 
 mod application;
 mod editor;
+mod error;
 mod popup_menu;
 mod shortcut_list;
 mod side_menu;
-mod error;
 
 use application::*;
 use bindings::wrapper::*;
 use bindings::Windows::Win32::{
-    Controls::*, DisplayDevices::*, Gdi::*, HiDpi::*, KeyboardAndMouseInput::*, MenusAndResources::*, Shell::*,
-    SystemServices::*, WindowsAndMessaging::*, FileSystem::*,
+    Controls::*, DisplayDevices::*, FileSystem::*, Gdi::*, HiDpi::*, KeyboardAndMouseInput::*, MenusAndResources::*,
+    Shell::*, SystemServices::*, WindowsAndMessaging::*,
 };
 use editor::*;
+use error::*;
 use key_map::*;
 use popup_menu::*;
 use shortcut_list::*;
 use side_menu::*;
-use error::*;
 
 fn error_mesage_box(text: impl AsRef<str>) {
-    message_box(None, text, "MMAccel キー設定", MESSAGEBOX_STYLE::MB_OK | MESSAGEBOX_STYLE::MB_ICONERROR);
+    message_box(
+        None,
+        text,
+        "MMAccel キー設定",
+        MESSAGEBOX_STYLE::MB_OK | MESSAGEBOX_STYLE::MB_ICONERROR,
+    );
 }
 
 fn main() {

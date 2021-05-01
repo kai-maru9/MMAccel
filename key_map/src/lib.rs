@@ -81,7 +81,7 @@ impl Keys {
     pub fn with_capacity(n: usize) -> Self {
         Self(Vec::with_capacity(n))
     }
-    
+
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()

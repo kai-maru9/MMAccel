@@ -22,11 +22,11 @@ impl Error {
             Self::Io(e)
         }
     }
-    
+
     pub fn hresult(e: windows::Error, text: impl AsRef<str>) -> Self {
         Self::HResult(e, text.as_ref().to_string())
     }
-    
+
     pub fn json_file(e: serde_json::Error, path: impl AsRef<std::path::Path>) -> Self {
         Self::JsonFile(e, path.as_ref().to_string_lossy().to_string())
     }
