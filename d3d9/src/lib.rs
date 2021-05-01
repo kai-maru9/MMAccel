@@ -26,6 +26,14 @@ unsafe fn mmaccel_run(base_addr: usize) {
     }
 }
 
+#[inline]
+unsafe fn mmaccel_end() {
+    if let Some(mmaccel) = MMACCEL.get() {
+        let f = mmaccel.get::<unsafe fn()>(b"mmaccel_end").unwrap();
+        f()
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "system" fn Direct3DCreate9(version: u32) -> *mut std::ffi::c_void {
     if let Some(d3d9) = D3D9.get() {
@@ -76,6 +84,7 @@ pub unsafe extern "system" fn DllMain(_: HINSTANCE, reason: u32, _: *mut std::ff
             mmaccel_run(base_addr);
         }
         DLL_PROCESS_DETACH => {
+            mmaccel_end();
             MME.take();
             MMACCEL.take();
             D3D9.take();

@@ -74,7 +74,7 @@ impl Context {
     pub fn call_window_proc_ret(&mut self, data: &CWPRETSTRUCT) {
         match data.message {
             WM_CREATE if get_class_name(data.hwnd) == "Polygon Movie Maker" => {
-                log::debug!("Created MainWindow");
+                log::debug!("created MainWindow");
                 self.mmd_window = Some(MmdWindow::new(data.hwnd));
                 let latest_key_map = self.latest_key_map.clone();
                 let mmd_window = self.mmd_window.as_ref().unwrap().window;
@@ -98,7 +98,7 @@ impl Context {
                     jh.join().ok();
                     log::debug!("stop FileMonitor");
                 }
-                log::debug!("Destroyed MainWindow");
+                log::debug!("destroyed MainWindow");
             }
             _ => {}
         }
@@ -177,5 +177,11 @@ impl Context {
         } else {
             None
         }
+    }
+}
+
+impl Drop for Context {
+    fn drop(&mut self) {
+        log::debug!("drop Context");
     }
 }

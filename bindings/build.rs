@@ -52,6 +52,10 @@ fn main() {
             WriteFile,
             FILE_NOTIFY_INFORMATION,
         },
+        Windows::Win32::Multimedia::{
+            timeBeginPeriod,
+            timeEndPeriod,
+        },
         Windows::Win32::HiDpi::*,
         Windows::Win32::Gdi::*,
         Windows::Win32::Controls::*,

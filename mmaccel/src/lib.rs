@@ -78,3 +78,8 @@ pub unsafe extern "system" fn mmaccel_run(base_addr: usize) {
         error("MMAccelの読み込みに失敗しました");
     }
 }
+
+#[no_mangle]
+pub unsafe extern "system" fn mmaccel_end() {
+    CONTEXT.take();
+}
