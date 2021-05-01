@@ -11,8 +11,8 @@ mod mmd_map;
 
 use bindings::wrapper::*;
 use bindings::Windows::Win32::{
-    Debug::*, FileSystem::*, KeyboardAndMouseInput::*, SystemServices::*, WindowsAndMessaging::*, WindowsProgramming::*,
-    Multimedia::*,
+    Debug::*, FileSystem::*, KeyboardAndMouseInput::*, Multimedia::*, SystemServices::*, WindowsAndMessaging::*,
+    WindowsProgramming::*,
 };
 use context::*;
 use file_monitor::*;

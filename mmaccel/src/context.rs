@@ -15,15 +15,11 @@ pub enum MenuItem {
 impl MenuCommand for MenuItem {
     fn from_command(v: std::mem::Discriminant<Self>, item_type: MenuItemType) -> Self {
         match v {
-            _ if v == std::mem::discriminant(&Self::LaunchConfig) => {
-                Self::LaunchConfig
-            }
+            _ if v == std::mem::discriminant(&Self::LaunchConfig) => Self::LaunchConfig,
             _ if v == std::mem::discriminant(&Self::RaiseTimerResolution(false)) => {
                 Self::RaiseTimerResolution(item_type.as_with_check().unwrap())
             }
-            _ if v == std::mem::discriminant(&Self::Version) => {
-                Self::Version
-            }
+            _ if v == std::mem::discriminant(&Self::Version) => Self::Version,
             _ => unimplemented!(),
         }
     }
@@ -42,7 +38,11 @@ impl MmdWindow {
             menu: MenuBuilder::new(window, "MMAccel")
                 .item(&MenuItem::LaunchConfig, "キー設定")
                 .separator()
-                .with_check(&MenuItem::RaiseTimerResolution(true), "タイマーの精度を上げる", settings.raise_timer_resolution)
+                .with_check(
+                    &MenuItem::RaiseTimerResolution(true),
+                    "タイマーの精度を上げる",
+                    settings.raise_timer_resolution,
+                )
                 .separator()
                 .item(&MenuItem::Version, "バージョン情報")
                 .build(),
@@ -82,14 +82,14 @@ struct Settings {
 
 impl Settings {
     const PATH: &'static str = "MMAccel/settings.json";
-    
+
     fn from_file() -> Self {
         match std::fs::File::open(Self::PATH) {
             Ok(file) => serde_json::from_reader(std::io::BufReader::new(file)).unwrap_or_default(),
             Err(_) => Settings::default(),
         }
     }
-    
+
     fn to_file(&self) {
         if let Ok(file) = std::fs::File::create(Self::PATH) {
             serde_json::to_writer_pretty(std::io::BufWriter::new(file), self).ok();
@@ -221,11 +221,7 @@ impl Context {
                             }
                         }
                         Some(MenuItem::RaiseTimerResolution(b)) => {
-                            self.time_period = if b {
-                                Some(TimePeriod::new(1))
-                            } else {
-                                None
-                            };
+                            self.time_period = if b { Some(TimePeriod::new(1)) } else { None };
                         }
                         Some(MenuItem::Version) => version_info(mmd_window.window),
                         _ => {}

@@ -34,7 +34,7 @@ pub struct MenuBuilder<T> {
     table: Vec<(std::mem::Discriminant<T>, std::mem::Discriminant<MenuItemType>)>,
 }
 
-impl<T: MenuCommand> MenuBuilder<T> {    
+impl<T: MenuCommand> MenuBuilder<T> {
     pub fn new(hwnd: HWND, name: impl AsRef<str>) -> Self {
         unsafe {
             let window_menu = GetMenu(hwnd);
@@ -72,13 +72,14 @@ impl<T: MenuCommand> MenuBuilder<T> {
                 ..Default::default()
             };
             InsertMenuItemW(self.menu, self.index, TRUE, &mut info);
-            self.table.push((std::mem::discriminant(v), std::mem::discriminant(&MenuItemType::Item)));
+            self.table
+                .push((std::mem::discriminant(v), std::mem::discriminant(&MenuItemType::Item)));
             self.index += 1;
             self.id += 1;
             self
         }
     }
-    
+
     #[inline]
     pub fn with_check(mut self, v: &T, text: impl AsRef<str>, checked: bool) -> Self {
         unsafe {
@@ -97,13 +98,16 @@ impl<T: MenuCommand> MenuBuilder<T> {
                 ..Default::default()
             };
             InsertMenuItemW(self.menu, self.index, TRUE, &mut info);
-            self.table.push((std::mem::discriminant(v), std::mem::discriminant(&MenuItemType::WithCheck(false))));
+            self.table.push((
+                std::mem::discriminant(v),
+                std::mem::discriminant(&MenuItemType::WithCheck(false)),
+            ));
             self.index += 1;
             self.id += 1;
             self
         }
     }
-    
+
     #[inline]
     pub fn separator(mut self) -> Self {
         unsafe {
@@ -118,7 +122,7 @@ impl<T: MenuCommand> MenuBuilder<T> {
             self
         }
     }
-    
+
     #[inline]
     pub fn build(self) -> Menu<T> {
         unsafe {
@@ -166,7 +170,7 @@ impl<T: MenuCommand> Menu<T> {
             SetMenuItemInfoW(self.menu, ROOT_ID + id, FALSE, &mut info);
         }
     }
-    
+
     pub fn recv_command(&self, wparam: WPARAM) -> Option<T> {
         if ((wparam.0 >> 16) & 0xffff) == 0 {
             let id = (wparam.0 & 0xffff) as i32 - ROOT_ID as i32;
@@ -198,4 +202,3 @@ impl<T> Drop for Menu<T> {
         }
     }
 }
-

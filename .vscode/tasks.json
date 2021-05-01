@@ -12,7 +12,9 @@
 			"options": {
 				"shell": {
 					"executable": "cmd.exe",
-					"args": ["/c"]
+					"args": [
+						"/c"
+					]
 				},
 				"cwd": "${workspaceFolder}"
 			}
@@ -20,13 +22,17 @@
 		{
 			"label": "debug copy",
 			"type": "shell",
-			"command": ".\\copy.bat",
-			"args": ["debug"],
+			"command": "./copy.ps1",
+			"args": [
+				"debug"
+			],
 			"dependsOn": "build debug",
 			"options": {
 				"shell": {
-					"executable": "cmd.exe",
-					"args": ["/c"]
+					"executable": "powershell.exe",
+					"args": [
+						"-c"
+					]
 				},
 				"cwd": "${workspaceFolder}"
 			}
@@ -35,7 +41,9 @@
 			"label": "build release",
 			"type": "cargo",
 			"command": "build",
-			"args": ["--release"],
+			"args": [
+				"--release"
+			],
 			"problemMatcher": [
 				"$rustc"
 			],
@@ -43,7 +51,9 @@
 			"options": {
 				"shell": {
 					"executable": "cmd.exe",
-					"args": ["/c"]
+					"args": [
+						"/c"
+					]
 				},
 				"cwd": "${workspaceFolder}"
 			}
@@ -51,16 +61,37 @@
 		{
 			"label": "release copy",
 			"type": "shell",
-			"command": ".\\copy.bat",
-			"args": ["release"],
+			"command": "./copy.ps1",
+			"args": [
+				"release"
+			],
 			"dependsOn": "build release",
 			"options": {
 				"shell": {
-					"executable": "cmd.exe",
-					"args": ["/c"]
+					"executable": "powershell.exe",
+					"args": [
+						"-c"
+					]
 				},
 				"cwd": "${workspaceFolder}"
 			}
+		},
+		{
+			"label": "package",
+			"group": "build",
+			"type": "shell",
+			"command": "./package.ps1",
+			"dependsOn": "build release",
+			"options": {
+				"shell": {
+					"executable": "powershell.exe",
+					"args": [
+						"-c"
+					]
+				},
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": []
 		}
 	]
 }

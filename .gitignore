@@ -5,3 +5,5 @@ MMEffect.dll
 /MikuMikuDance_v932x64/UserFile
 /MikuMikuDance_v932x64/MMAccel
 /MikuMikuDance_v932x64/Data/mmconfig.ini
+/package
+package.ps1
