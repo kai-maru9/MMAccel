@@ -429,6 +429,14 @@ unsafe extern "system" fn main_window_proc(
                             );
                         }
                     }
+                    NM_SETFOCUS => {
+                        let lbutton = (GetKeyState(VK_LBUTTON as _) & 0x80) != 0;
+                        if app.editor.is_visible() && lbutton {
+                            if let Some(ret) = app.editor.end() {
+                                app.update_keys(ret.category, ret.item, ret.keys);
+                            }
+                        }
+                    }
                     _ => {}
                 }
                 LRESULT(0)
