@@ -3,10 +3,10 @@
 mod application;
 mod editor;
 mod error;
+mod old_key_map;
 mod popup_menu;
 mod shortcut_list;
 mod side_menu;
-mod old_key_map;
 
 use application::*;
 use bindings::wrapper::*;
@@ -17,10 +17,10 @@ use bindings::Windows::Win32::{
 use editor::*;
 use error::*;
 use key_map::*;
+use old_key_map::OldKeyMap;
 use popup_menu::*;
 use shortcut_list::*;
 use side_menu::*;
-use old_key_map::OldKeyMap;
 
 fn error_mesage_box(text: impl AsRef<str>) {
     message_box(

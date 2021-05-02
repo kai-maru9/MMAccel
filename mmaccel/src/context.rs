@@ -83,8 +83,8 @@ struct Settings {
 impl Settings {
     const PATH: &'static str = "MMAccel/settings.json";
 
-    fn from_file() -> Option<Self> {
-        match std::fs::File::open(Self::PATH) {
+    fn from_file(module_path: &std::path::Path) -> Option<Self> {
+        match std::fs::File::open(module_path.join(Self::PATH)) {
             Ok(file) => {
                 let data: serde_json::Value = match serde_json::from_reader(std::io::BufReader::new(file)) {
                     Ok(data) => data,
@@ -122,6 +122,7 @@ const MMD_MAP_PATH: &str = "MMAccel/mmd_map.json";
 const KEY_MAP_PATH: &str = "MMAccel/key_map.json";
 
 pub struct Context {
+    module_path: std::path::PathBuf,
     settings: Settings,
     _call_window_proc_ret: HookHandle,
     _get_message_handle: HookHandle,
@@ -135,8 +136,8 @@ pub struct Context {
 
 impl Context {
     #[inline]
-    pub fn new() -> std::io::Result<Self> {
-        let settings = Settings::from_file().unwrap_or_default();
+    pub fn new(module_path: std::path::PathBuf) -> std::io::Result<Self> {
+        let settings = Settings::from_file(&module_path).unwrap_or_default();
         log::debug!("{:?}", settings);
         let mmd_map = MmdMap::from_file(MMD_MAP_PATH)?;
         let key_map = KeyMap::from_file(KEY_MAP_PATH).unwrap_or_else(|_| {
@@ -151,6 +152,7 @@ impl Context {
         let file_monitor = FileMonitor::new();
         let time_period = settings.raise_timer_resolution.then(|| TimePeriod::new(1));
         Ok(Self {
+            module_path,
             settings,
             _call_window_proc_ret: HookHandle::new(
                 WINDOWS_HOOK_ID::WH_CALLWNDPROCRET,
@@ -210,28 +212,32 @@ impl Context {
                 if let Some(mmd_window) = self.mmd_window.as_ref() {
                     match mmd_window.menu.recv_command(data.wParam) {
                         Some(MenuItem::LaunchConfig) => {
-                            let key_config_process = std::process::Command::new("MMAccel/key_config.exe")
-                                .current_dir("MMAccel")
+                            let path = self.module_path.join("MMAccel/key_config.exe");
+                            let key_config_process = std::process::Command::new(&path)
+                                .current_dir(self.module_path.join("MMAccel"))
                                 .arg("--mmd")
                                 .stdout(std::process::Stdio::piped())
                                 .spawn();
-                            if let Ok(process) = key_config_process {
-                                use std::os::windows::io::AsRawHandle;
-                                let handle = HANDLE(process.stdout.as_ref().unwrap().as_raw_handle() as _);
-                                let mut p = 0u64;
-                                let mut byte = 0;
-                                unsafe {
-                                    if ReadFile(
-                                        handle,
-                                        &mut p as *mut _ as _,
-                                        std::mem::size_of::<u64>() as _,
-                                        &mut byte,
-                                        std::ptr::null_mut(),
-                                    ) != FALSE
-                                    {
-                                        self.key_config = Some(HWND(p as _));
+                            match key_config_process {
+                                Ok(process) => {
+                                    use std::os::windows::io::AsRawHandle;
+                                    let mut p = 0u64;
+                                    let mut byte = 0;
+                                    unsafe {
+                                        let handle = HANDLE(process.stdout.as_ref().unwrap().as_raw_handle() as _);
+                                        if ReadFile(
+                                            handle,
+                                            &mut p as *mut _ as _,
+                                            std::mem::size_of::<u64>() as _,
+                                            &mut byte,
+                                            std::ptr::null_mut(),
+                                        ) != FALSE
+                                        {
+                                            self.key_config = Some(HWND(p as _));
+                                        }
                                     }
                                 }
+                                Err(e) => log::error!("LaunchCconfig: {:?}", e),
                             }
                         }
                         Some(MenuItem::RaiseTimerResolution(b)) => {

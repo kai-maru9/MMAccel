@@ -45,12 +45,16 @@ fn str_to_vk(k: &str) -> Option<u32> {
             let c = k.chars().next().unwrap();
             (!c.is_ascii_control()).then(|| c.to_ascii_uppercase() as u32)
         }
-        _ if k.starts_with("num") => {
-            k.trim_matches(|c| !char::is_numeric(c)).parse().map(|n: u32| VK_NUMPAD0 + n).ok()
-        }
-        _ if k.starts_with('f') => {
-            k.trim_matches(|c| !char::is_numeric(c)).parse().map(|n: u32| VK_F1 + n - 1).ok()
-        }
+        _ if k.starts_with("num") => k
+            .trim_matches(|c| !char::is_numeric(c))
+            .parse()
+            .map(|n: u32| VK_NUMPAD0 + n)
+            .ok(),
+        _ if k.starts_with('f') => k
+            .trim_matches(|c| !char::is_numeric(c))
+            .parse()
+            .map(|n: u32| VK_F1 + n - 1)
+            .ok(),
         _ => None,
     }
 }
@@ -85,7 +89,12 @@ impl OldKeyMap {
             if ss.len() != 2 {
                 continue;
             }
-            let keys = ss[1].trim().to_ascii_lowercase().split('+').map(|s| str_to_vk(s)).collect::<Option<Vec<_>>>();
+            let keys = ss[1]
+                .trim()
+                .to_ascii_lowercase()
+                .split('+')
+                .map(|s| str_to_vk(s))
+                .collect::<Option<Vec<_>>>();
             if keys.is_none() {
                 continue;
             }
@@ -101,7 +110,7 @@ impl OldKeyMap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn load_key_map() {
         let data = OldKeyMap::from_file("key_map.txt").unwrap();

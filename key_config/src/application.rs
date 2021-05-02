@@ -117,7 +117,7 @@ impl KeyTable {
         }
         to_file(path, &v)
     }
-    
+
     #[inline]
     fn category_len(&self) -> usize {
         self.0.len()
@@ -283,7 +283,7 @@ impl Application {
         }
         Ok(app)
     }
-    
+
     fn update_keys_to_file(&mut self, category: usize, item: usize, keys: Option<Keys>) {
         self.update_keys(category, item, keys);
         self.key_table.to_file("key_map.json").ok();
@@ -292,7 +292,8 @@ impl Application {
 
     fn update_keys(&mut self, category: usize, item: usize, keys: Option<Keys>) {
         if category == self.side_menu.current_index() {
-            self.shortcut_list.set_keys(item, keys.as_ref().unwrap_or(&Keys::default()));
+            self.shortcut_list
+                .set_keys(item, keys.as_ref().unwrap_or(&Keys::default()));
         }
         self.key_table.set_keys(category, item, keys);
     }
@@ -345,7 +346,7 @@ impl wita::EventHandler for Box<Application> {
     fn dpi_changed(&mut self, _: &wita::Window) {
         self.editor.resize();
     }
-    
+
     fn drop_files(&mut self, _: &wita::Window, paths: &[&std::path::Path], _: wita::PhysicalPosition<f32>) {
         if paths[0].file_name().and_then(|f| f.to_str()) == Some("key_map.txt") {
             if let Ok(mut data) = OldKeyMap::from_file(&paths[0]) {
@@ -358,7 +359,7 @@ impl wita::EventHandler for Box<Application> {
                             self.update_keys(category, index, None);
                         }
                     }
-                }                
+                }
                 self.key_table.to_file("key_map.json").ok();
                 self.update_shortcut_list();
                 log::debug!("load key_map.txt");

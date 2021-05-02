@@ -62,7 +62,8 @@ unsafe extern "system" fn proxy_get_key_state(vk: i32) -> i16 {
 pub unsafe extern "system" fn mmaccel_run(base_addr: usize) {
     env_logger::init();
     log::debug!("mmaccel_run");
-    if let Ok(ctx) = Context::new() {
+    let path = dbg!(get_module_path().parent().unwrap().to_path_buf());
+    if let Ok(ctx) = Context::new(path) {
         CONTEXT.set(ctx).ok();
     } else {
         error("MMAccelの読み込みに失敗しました");
