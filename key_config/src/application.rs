@@ -117,6 +117,11 @@ impl KeyTable {
         }
         to_file(path, &v)
     }
+    
+    #[inline]
+    fn category_len(&self) -> usize {
+        self.0.len()
+    }
 
     #[inline]
     fn iter(&self) -> std::slice::Iter<Category> {
@@ -129,8 +134,8 @@ impl KeyTable {
     }
 
     #[inline]
-    fn set_keys(&mut self, category: usize, item: usize, keys: Keys) {
-        (self.0)[category].items[item].keys = keys;
+    fn set_keys(&mut self, category: usize, item: usize, keys: Option<Keys>) {
+        (self.0)[category].items[item].keys = keys.unwrap_or_default();
     }
 }
 
@@ -223,6 +228,7 @@ impl Application {
             .title("MMAccel キー設定")
             .position(settings.window_position)
             .inner_size(settings.window_size)
+            .accept_drag_files(true)
             .style(
                 wita::WindowStyle::default()
                     .has_maximize_box(false)
@@ -277,14 +283,18 @@ impl Application {
         }
         Ok(app)
     }
-
-    fn update_keys(&mut self, category: usize, item: usize, keys: Keys) {
-        if category == self.side_menu.current_index() {
-            self.shortcut_list.set_keys(item, &keys);
-        }
-        self.key_table.set_keys(category, item, keys);
+    
+    fn update_keys_to_file(&mut self, category: usize, item: usize, keys: Option<Keys>) {
+        self.update_keys(category, item, keys);
         self.key_table.to_file("key_map.json").ok();
         self.update_shortcut_list();
+    }
+
+    fn update_keys(&mut self, category: usize, item: usize, keys: Option<Keys>) {
+        if category == self.side_menu.current_index() {
+            self.shortcut_list.set_keys(item, keys.as_ref().unwrap_or(&Keys::default()));
+        }
+        self.key_table.set_keys(category, item, keys);
     }
 
     fn update_shortcut_list(&mut self) {
@@ -335,6 +345,26 @@ impl wita::EventHandler for Box<Application> {
     fn dpi_changed(&mut self, _: &wita::Window) {
         self.editor.resize();
     }
+    
+    fn drop_files(&mut self, _: &wita::Window, paths: &[&std::path::Path], _: wita::PhysicalPosition<f32>) {
+        if paths[0].file_name().and_then(|f| f.to_str()) == Some("key_map.txt") {
+            if let Ok(mut data) = OldKeyMap::from_file(&paths[0]) {
+                for category in 0..self.key_table.category_len() {
+                    for index in 0..self.key_table[category].items.len() {
+                        let item = &self.key_table[category].items[index];
+                        if let Some(src) = data.0.iter_mut().find(|src| src.id == item.id) {
+                            self.update_keys(category, index, src.keys.take());
+                        } else {
+                            self.update_keys(category, index, None);
+                        }
+                    }
+                }                
+                self.key_table.to_file("key_map.json").ok();
+                self.update_shortcut_list();
+                log::debug!("load key_map.txt");
+            }
+        }
+    }
 
     fn closed(&mut self, _: &wita::Window) {
         self.settings.window_position = self.main_window.position();
@@ -366,7 +396,7 @@ unsafe extern "system" fn main_window_proc(
                         let nlv = (lparam.0 as *const NMLISTVIEW).as_ref().unwrap();
                         if app.editor.is_visible() {
                             if let Some(ret) = app.editor.end() {
-                                app.update_keys(ret.category, ret.item, ret.keys);
+                                app.update_keys_to_file(ret.category, ret.item, Some(ret.keys));
                             }
                         }
                         if nlv.uNewState & LVIS_SELECTED != 0 {
@@ -380,7 +410,7 @@ unsafe extern "system" fn main_window_proc(
                     NM_SETFOCUS => {
                         if app.editor.is_visible() {
                             if let Some(ret) = app.editor.end() {
-                                app.update_keys(ret.category, ret.item, ret.keys);
+                                app.update_keys_to_file(ret.category, ret.item, Some(ret.keys));
                             }
                         }
                     }
@@ -414,7 +444,7 @@ unsafe extern "system" fn main_window_proc(
                     NM_CLICK => {
                         if app.editor.is_visible() {
                             if let Some(ret) = app.editor.end() {
-                                app.update_keys(ret.category, ret.item, ret.keys);
+                                app.update_keys_to_file(ret.category, ret.item, Some(ret.keys));
                             }
                         }
                     }
@@ -450,7 +480,7 @@ unsafe extern "system" fn main_window_proc(
                         let lbutton = (GetKeyState(VK_LBUTTON as _) & 0x80) != 0;
                         if app.editor.is_visible() && lbutton {
                             if let Some(ret) = app.editor.end() {
-                                app.update_keys(ret.category, ret.item, ret.keys);
+                                app.update_keys_to_file(ret.category, ret.item, Some(ret.keys));
                             }
                         }
                     }
@@ -473,14 +503,14 @@ unsafe extern "system" fn main_window_proc(
         }
         WM_COMMAND => {
             if (wparam.0 & 0xffff) as u32 == IDM_MENU_DETACH {
-                app.update_keys(app.popup_menu.category(), app.popup_menu.item(), Keys::new());
+                app.update_keys_to_file(app.popup_menu.category(), app.popup_menu.item(), None);
             }
             LRESULT(0)
         }
         WM_KEY_CONFIG_EDIT_APPLY => {
             if app.editor.is_visible() {
                 if let Some(ret) = app.editor.end() {
-                    app.update_keys(ret.category, ret.item, ret.keys);
+                    app.update_keys_to_file(ret.category, ret.item, Some(ret.keys));
                 }
             }
             LRESULT(0)

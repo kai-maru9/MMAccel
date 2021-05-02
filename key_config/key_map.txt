@@ -1,0 +1,558 @@
+##### モデル編集/カメラ編集共通 #####
+### フレーム ###
+# 元に戻す
+Undo = ctrl + z
+# やり直し
+Redo = ctrl + x
+# フレームの先頭
+FrameHead = ctrl + left
+# 前のキーフレーム
+FrameKeyPrev = shift + left
+# 1フレーム前
+FramePrev = a
+# 現在フレーム入力
+CurrentFrameFocus = shift + c
+# 1フレーム次
+FrameNext = d
+# 次のキーフレーム
+FrameKeyNext = shift + right
+# フレームの最後尾
+FrameLast = ctrl + right
+# 現フレームボタン
+JumpCurrentFrame = 
+# コピー
+KeyCopy = ctrl + c
+# ペースト
+KeyPaste = ctrl + v
+# 反転ペースト
+KeyReversePaste = shift + ctrl + v
+# 縦選択
+VerticalSelect = 
+# 削除
+KeyDelete = delete
+# 範囲選択ボーンドロップダウン前項目
+FrameSelectorPrev = 
+# 範囲選択ボーンドロップダウン次項目
+FrameSelectorNext = 
+# 範囲選択開始フレーム入力
+KeyRangeBeginFocus = 
+# 範囲選択終了フレーム入力
+KeyRangeEndFocus = 
+# 範囲選択
+KeyRangeSelect = 
+# 拡大縮小
+FrameScaling = 
+# ボーン前移動
+BonePrev = 
+# ボーン次移動
+BoneNext = 
+# 登録
+FrameRegister = z
+
+### 補間 ###
+# 操作対象ドロップダウン前項目
+InterpolationSelectorPrev = 
+# 操作対象ドロップダウン次項目
+InterpolationSelectorNext = 
+# 自動選択
+InterpolationAuto = 
+# コピー
+InterpolationCopy = 
+# ペースト
+InterpolationPaste = 
+# 線形補間
+InterpolationLinear = 
+
+### モデル ###
+# モデルドロップダウン前項目
+ModelSelectorPrev = 
+# モデルドロップダウン次項目
+ModelSelectorNext = 
+# 読込
+ModelLoad = shift + ctrl + o
+# 削除
+ModelDelete = 
+# 表示
+ModelShow = 
+# セルフシャドウ
+ModelSelfShadow = 
+# 加算
+ModelAdd = 
+# IKドロップダウン前項目
+IKBoneSelectorPrev = 
+# IKドロップダウン次項目
+IKBoneSelectorNext = 
+# 外部親
+OutsideParent = shift + ctrl + u
+# 登録
+ModelRegister = 
+
+### 視点 ###
+# 正面
+ViewFront = 
+# 背面
+ViewBack = 
+# 上面
+ViewTop = 
+# 左面
+ViewLeft = 
+# 右面
+ViewRight = 
+# 下面/カメラ
+ViewBottom = num7
+# 追従
+ViewFollow = 
+# モデル
+ViewCenterModel = 
+# ボーン
+ViewCenterBone = 
+
+### 再生 ###
+# 再生
+Play = 
+# くり返し
+Repeat = 
+# 開始フレーム入力
+PlayStartFrameFocus = 
+# 終了フレーム入力
+PlayStopFrameFocus = 
+# フレ・スタート
+PlayStartFrame = 
+# フレ・ストップ
+PlayStopFrame = 
+
+### メイン画面 ###
+# セット
+MainSet = 
+# 現在フレーム入力
+MainCurrentFrameFocus = 
+# Go
+MainGo = 
+# 美影
+MainExShadow = 
+# 情報
+MainInfo = 
+# 省エネ
+MainEco = 
+# 座標軸
+MainAxis = ctrl + i
+# モデル編/カメラ編
+MainChangeEditor = ctrl + w
+# 位置X初期化
+MainPosX = 
+# 位置Y初期化
+MainPosY = 
+# 位置Z初期化
+MainPosZ = 
+# 位置X入力
+MainPosXFocus = 
+# 位置Y入力
+MainPosYFocus = 
+# 位置Z入力
+MainPosZFocus = 
+# 角度X初期化
+MainAngleX = 
+# 角度Y初期化
+MainAngleY = 
+# 角度Z初期化
+MainAngleZ = 
+# 角度X入力
+MainAngleXFocus = 
+# 角度Y入力
+MainAngleYFocus = 
+# 角度Z入力
+MainAngleZFocus = 
+# 距離初期化
+MainDistance = 
+# 距離入力
+MainDistanceFocus = 
+# local/global(/accesory)切り替え
+ChangeSpace = 
+
+### その他 ###
+# キーボード入力解除
+KillFocus = ctrl + k
+# 全て折りたたむ
+FoldAll = 
+# 全て展開
+UnfoldAll = 
+
+
+##### カメラ編集 #####
+### カメラ ###
+# 折りたたみ
+CameraFold = 
+# 初期化
+CameraInit = 
+# パース
+CameraPerspective = 
+# パース角度入力
+CameraPerspectiveFocus = 
+# 追従モデルドロップダウン前項目
+CameraFollowModelSelectorPrev = 
+# 追従モデルドロップダウン次項目
+CameraFollowModelSelectorNext = 
+# 追従ボーンドロップダウン前項目
+CameraFollowBoneSelectorPrev = 
+# 追従ボーンドロップダウン次項目
+CameraFollowBoneSelectorNext = 
+# 登録
+CameraRegister = 
+
+### 照明 ###
+# 折りたたみ
+LightFold = 
+# 赤入力
+LightRedFocus = 
+# 緑入力
+LightGreenFocus = 
+# 青入力
+LightBlueFocus = 
+# X入力
+LightXFocus = 
+# Y入力
+LightYFocus = 
+# Z入力
+LightZFocus = 
+# 初期化
+LightInit = 
+# 登録
+LightRegister = 
+
+### セルフ影 ###
+# 折りたたみ
+SelfShadowFold = 
+# 影なし
+SelfShadowDisable = 
+# モード1
+SelfShadowMode1 = 
+# モード2
+SelfShadowMode2 = 
+# 影範囲入力
+SelfShadowRangeFocus = 
+# 登録
+SelfShadowRegister = 
+# モード切り替え
+SelfShadowModeChange = 
+
+### アクセサリ ###
+# 折りたたみ
+AccessoryFold = 
+# アクセサリドロップダウン前項目
+AccessorySelectorPrev = 
+# アクセサリドロップダウン次項目
+AccessorySelectorNext = 
+# 表示
+AccessoryShow = 
+# 影
+AccessoryShadow = 
+# 読込
+AccessoryLoad = ctrl + alt + o
+# 削除
+AccessoryDelete = 
+# 加算
+AccessoryAdd = 
+# 追従モデルドロップダウン前項目
+AccessoryFollowModelPrev = 
+# 追従モデルドロップダウン次項目
+AccessoryFollowModelNext = 
+# 追従ボーンドロップダウン前項目
+AccessoryFollowBonePrev = 
+# 追従ボーンドロップダウン次項目
+AccessoryFollowBoneNext = 
+# X入力
+AccessoryXFocus = 
+# Y入力
+AccessoryYFocus = 
+# Z入力
+AccessoryZFocus = 
+# Rx入力
+AccessoryRxFocus = 
+# Ry入力
+AccessoryRyFocus = 
+# Rz入力
+AccessoryRzFocus = 
+# Si入力
+AccessorySiFocus = 
+# Tr入力
+AccessoryTrFocus = 
+# 登録
+AccessoryRegister = 
+
+
+##### モデル編集 #####
+### ボーン ###
+# 折りたたみ
+BoneFold = 
+# 選択
+BoneSelect = 
+# 回転
+BoneRotate = x
+# 移動
+BoneMove = c
+# Box選択
+BoneBoxSelect = b
+# 全て選択
+BoneAllSelect = 
+# 未登録選択
+BoneUnregisterSelect = 
+# 物理
+BonePhysics = 
+# 初期化
+BoneInit = i
+# 登録
+BoneRegister = 
+
+### 表情 ###
+# 折りたたみ
+MorphFold = 
+# 目モーフ入力
+MorphEyeFocus = 
+# 目モーフ登録
+MorphEyeRegister = 
+# 目モーフドロップダウン前項目
+MorphEyeSelectorPrev = 
+# 目モーフドロップダウン次項目
+MorphEyeSelectorNext = 
+# 口モーフ入力
+MorphLipFocus = 
+# 口モーフ登録
+MorphLipRegister = 
+# 口モーフドロップダウン前項目
+MorphLipSelectorPrev = 
+# 口モーフドロップダウン次項目
+MorphLipSelectorNext = 
+# まゆモーフ入力
+MorphEyeblowFocus = 
+# まゆモーフ登録
+MorphEyeblowRegister = 
+# まゆモーフドロップダウン前項目
+MorphEyeblowSelectorPrev = 
+# まゆモーフドロップダウン次項目
+MorphEyeblowSelectorNext = 
+# その他モーフ入力
+MorphEtcFocus = 
+# その他登録
+MorphEtcRegister = 
+# その他モーフドロップダウン前項目
+MorphEtcSelectorPrev = 
+# その他モーフドロップダウン次項目
+MorphEtcSelectorNext = 
+
+
+##### メニュー #####
+### ファイル ###
+# 新規
+MenuFileNew = ctrl + n
+# 開く
+MenuFileOpen = ctrl + o
+# 上書き保存
+MenuFileSave = ctrl + s
+# 名前をつけて保存
+MenuFileSaveAs = shift + ctrl + s
+# AVIファイルに出力
+MenuFileRenderAVI = 
+# 画像ファイルに出力
+MenuFileRenderImage = 
+# ポーズ読込
+MenuFileLoadPose = 
+# ポーズ保存
+MenuFileSavePose = 
+# モーション読込
+MenuFileLoadMotion = ctrl + m
+# モーション保存
+MenuFileSaveMotion = 
+# WAVファイル読込
+MenuFileLoadWAV = 
+# フレーム移動時WAVを鳴らす
+MenuFileWAVWithFrame = 
+# WAVファイルを鳴らさない
+MenuFileMuteWAV = 
+# デフォルトフォルダを前回の位置に
+MenuFilePrevDefaultFolder = 
+# 終了
+MenuFileQuit = 
+
+### 編集 ###
+# ボーン・カメラ数値入力
+MenuEditNumericInput = 
+# ボーン・カメラ角度0化
+MenuEditAngle0 = 
+# 不要フレーム削除
+MenuEditDeleteUnusedFrame = 
+# カメラフレームすべて選択
+MenuEditCameraFrameAllSelect = 
+# 照明フレームすべて選択
+MenuEditLightingFrameAllSelect = 
+# セルフ影フレームすべて選択
+MenuEditSelfShadowFrameAllSelect = 
+# 重力フレームすべて選択
+MenuEditGravityFrameAllSelect = 
+# アクセサリフレームすべて選択
+MenuEditAccessoryFrameAllSelect = 
+# カメラ位置角度補正
+MenuEditCorrectCamera = 
+# ボーンフレームすべて選択
+MenuEditBoneFrameAllSelect = 
+# 表情フレームすべて選択
+MenuEditMorphFrameAllSelect = 
+# 表示・IK・外部親すべて選択
+MenuEditShowIKOPFrameAllSelect = 
+# 別フレームへペースト
+MenuEditAnotherFramePaste = 
+# 空フレーム挿入（ボーンorカメラ）
+MenuEditInsertEmptyFrame = 
+# 列フレーム削除（ボーンorカメラ）
+MenuEditDeleteVerticalFrames = 
+# 空フレーム挿入（表情or照明）
+MenuEditInsertEmptyFrameMorphOrLighting = 
+# 空フレーム削除（表情or照明）
+MenuEditDeleteVerticalFramesMorphOrLighting = 
+# ボーン位置角度補正
+MenuEditCorrectBone = 
+# 表情大きさ補正
+MenuEditCorrectMorph = 
+# センター位置バイアス
+MenuEditCenterBias = 
+
+### 表示 ###
+# 出力サイズ
+MenuViewScreenSize = 
+# 別窓
+MenuViewSeparateWindow = 
+# 別窓最前列表示
+MenuViewToTheFore = 
+# モデル編集時カメラ・照明追従
+MenuViewCameraLightingTracking = 
+# 情報表示
+MenuViewInfo = 
+# 座標軸表示
+MenuViewAxis = shift + ctrl + f
+# 地面影表示
+MenuViewGroundShadow = 
+# 地面影色設定
+MenuViewGroundShadowColor = 
+# 地面影色版透明化
+MenuViewTransparentGroundShadow = 
+# 半透明化
+MenuViewHalfTransparency = alt + v
+# モデル非表示
+MenuViewInvisibleModel = shift + v
+# エッジ太さ
+MenuViewEdgeThickness = 
+# エッジ色
+MenuViewEdgeColor = 
+# アンチエイリアス
+MenuViewAntiAlias = 
+# ミップマップ（異方性フィルタ）
+MenuViewMipmap = 
+# セルフシャドウ表示
+MenuViewSelfShadow = 
+# ワイヤーフレーム表示
+MenuViewWireFrame = 
+# フルスクリーン表示
+MenuViewFullScreen = 
+# FPS無制限
+MenuViewFPSNoLimit = 
+# 30fps制限
+MenuViewFPS30 = 
+# 60fps制限
+MenuViewFPS60 = 
+# 省エネモード
+MenuViewEco = 
+
+### 背景 ###
+# アクセサリ編集
+MenuBackgroundEditAccessories = 
+# モデル描画順
+MenuBackgroundEditDrawModels = 
+# モデル計算順
+MenuBackgroundEditCalcModels = 
+# 背景黒化
+MenuBackgroundBlack = 
+# 背景AVI読込
+MenuBackgroundLoadAVI = 
+# 背景画像読込
+MenuBackgroundLoadImage = 
+# 背景AVI表示
+MenuBackgroundShowAVI = shift + a
+# 背景画像表示
+MenuBackgroundShowImage = 
+# スクリーン用キャプチャOFF
+MenuBackgroundCaptureOff = 
+# ON・モード1（全画面）
+MenuBackgroundCaptureOn1 = 
+# ON・モード2（4:3比率）
+MenuBackgroundCaptureOn2 = 
+# ON・モード3（背景AVI）
+MenuBackgroundCaptureOn3 = 
+
+### 表情 ###
+# リップフレーム全て削除
+MenuMorphDeleteAllLipKeys = 
+# vsqによるリップシンク
+MenuMorphLipSync = 
+# リップフレーム時間シフト
+MenuMorphShiftLipFrame = 
+# 目フレーム全て削除
+MenuMorphDeleteAllEyeKeys = 
+# まばたきランダム登録
+MenuMorphRandomBlink = 
+# まゆフレーム全て削除
+MenuMorphDeleteAllEyeblowKeys = 
+# 全ての表情リセット
+MenuMorphResetAllMorph = 
+# 全ての表情フレーム登録
+MenuMorphRegisterAllMorphKeys = 
+
+### 物理演算 ###
+# オン/オフモード
+MenuPhysicsModeOnOff = 
+# 常に演算
+MenuPhysicsModeAlways = 
+# トレースモード
+MenuPhysicsModeTrace = 
+# 演算しない
+MenuPhysicsModeDisable = 
+# 再生時は常にオン/オフモードにする
+MenuPhysicsPlaytimeModeOnOff = 
+# 剛体表示
+MenuPhysicsShowRigid = 
+# 重力設定
+MenuPhysicsEditGravity = 
+# 剛体位置初期化
+MenuPhysicsInitRigidPos = 
+# 床
+MenuPhysicsFloor = 
+# 物理演算ボーン選択
+MenuPhysicsSelectEffectedBone = 
+# 全ての物理ONフレーム（x印）選択
+MenuPhysicsSelectAllEffectedBone = 
+# 物理ON/OFFフレーム変換
+MenuPhysicsConvertOnOffFrames = 
+# 物理エンジンについて
+MenuPhysicsAbout = 
+
+### モーションキャプチャ ###
+# Kinect
+MenuMotionCapKinect = 
+# キャプチャ
+MenuMotionCapCapture = 
+# 左右反転
+MenuMotionCapFilp = 
+# ロストボーン初期化
+MenuMotionCapInitLostBone = 
+# 赤人表示
+MenuMotionCapShowRedHuman = 
+# oniファイル読込
+MenuMotionCapLoadONI = 
+
+### ヘルプ ###
+# English/Japanese
+MenuHelpSwitchLanguage = 
+# テクスチャ読直し
+MenuHelpReloadTexture = 
+# バージョン情報
+MenuHelpAbout = 
+
+
