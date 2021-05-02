@@ -8,6 +8,5 @@ fn write_package_ps1(version: &str) {
 
 fn main() {
     let version = env!("CARGO_PKG_VERSION").replace(".", "_");
-    std::fs::create_dir_all(format!("../package/MMAccel_{}/MMAccel", version)).unwrap();
     write_package_ps1(&version);
 }

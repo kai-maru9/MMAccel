@@ -223,6 +223,11 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> Result<Box<Self>, Error> {
+        unsafe {
+            if SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT(-4)) == DPI_AWARENESS_CONTEXT(0) {
+                SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT(-3));
+            }
+        }
         let settings = Settings::from_file()?;
         let main_window = wita::WindowBuilder::new()
             .title("MMAccel キー設定")
