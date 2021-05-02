@@ -75,7 +75,7 @@ fn version_info(hwnd: HWND) {
     message_box(Some(hwnd), text, "", MESSAGEBOX_STYLE::MB_OK);
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize)]
 struct Settings {
     raise_timer_resolution: bool,
 }
@@ -83,10 +83,23 @@ struct Settings {
 impl Settings {
     const PATH: &'static str = "MMAccel/settings.json";
 
-    fn from_file() -> Self {
+    fn from_file() -> Option<Self> {
         match std::fs::File::open(Self::PATH) {
-            Ok(file) => serde_json::from_reader(std::io::BufReader::new(file)).unwrap_or_default(),
-            Err(_) => Settings::default(),
+            Ok(file) => {
+                let data: serde_json::Value = match serde_json::from_reader(std::io::BufReader::new(file)) {
+                    Ok(data) => data,
+                    Err(_) => return None,
+                };
+                let obj = data.as_object()?;
+                let default = Self::default();
+                Some(Self {
+                    raise_timer_resolution: obj
+                        .get("raise_timer_resolution")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(default.raise_timer_resolution),
+                })
+            }
+            Err(_) => None,
         }
     }
 
@@ -123,7 +136,8 @@ pub struct Context {
 impl Context {
     #[inline]
     pub fn new() -> std::io::Result<Self> {
-        let settings = Settings::from_file();
+        let settings = Settings::from_file().unwrap_or_default();
+        log::debug!("{:?}", settings);
         let mmd_map = MmdMap::from_file(MMD_MAP_PATH)?;
         let key_map = KeyMap::from_file(KEY_MAP_PATH).unwrap_or_else(|_| {
             let m = KeyMap::default();
