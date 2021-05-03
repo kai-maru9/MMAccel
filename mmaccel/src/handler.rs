@@ -49,14 +49,24 @@ impl Handler {
         }
     }
 
-    pub fn key_down(&mut self, vk: u32, mmd_window: HWND) {
+    pub fn key_down(&mut self, vk: u32, mmd_window: HWND, hwnd: HWND) {
         fn handle(
             item: &ItemKind,
             key_states: &mut HashMap<u32, bool>,
             folds: &[u32],
             unfolds: &[u32],
             mmd_window: HWND,
+            hwnd: HWND,
         ) {
+            if get_class_name(hwnd).to_ascii_uppercase() == "EDIT" {
+                unsafe {
+                    if item == &ItemKind::KillFocus {
+                        SetFocus(mmd_window);
+                        log::debug!("KillFocus")
+                    }
+                }
+                return;
+            }
             match item {
                 ItemKind::Key(k) => {
                     if let Some(ks) = key_states.get_mut(k) {
@@ -155,12 +165,12 @@ impl Handler {
         self.input[vk as usize] = 0x80;
         self.input_keys.keyboard_state(&self.input);
         if let Some(item) = self.handler.get(&self.input_keys) {
-            handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window);
+            handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window, hwnd);
             return;
         }
         self.input_keys.vk(vk);
         if let Some(item) = self.handler.get(&self.input_keys) {
-            handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window);
+            handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window, hwnd);
         }
     }
 

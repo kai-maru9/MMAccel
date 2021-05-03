@@ -250,12 +250,18 @@ impl Context {
                     }
                 }
             }
-            WM_KEYDOWN | WM_SYSKEYDOWN => {
-                self.handler
-                    .key_down(data.wParam.0 as u32, self.mmd_window.as_ref().unwrap().window);
+            WM_KEYDOWN | WM_SYSKEYDOWN => unsafe {
+                let main_window = self.mmd_window.as_ref().unwrap().window;
+                if data.hwnd == main_window || GetParent(data.hwnd) == main_window {
+                    self.handler
+                        .key_down(data.wParam.0 as u32, self.mmd_window.as_ref().unwrap().window, data.hwnd);
+                }
             }
-            WM_KEYUP | WM_SYSKEYUP => {
-                self.handler.key_up(data.wParam.0 as u32);
+            WM_KEYUP | WM_SYSKEYUP => unsafe {
+                let main_window = self.mmd_window.as_ref().unwrap().window;
+                if data.hwnd == main_window || GetParent(data.hwnd) == main_window {
+                    self.handler.key_up(data.wParam.0 as u32);
+                }
             }
             WM_APP => {
                 if !self.latest_key_map.swap(true, atomic::Ordering::SeqCst) {
