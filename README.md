@@ -53,7 +53,7 @@ MMAccelのd3d9.dllではMMEを動作させることが出来ますが、MMEのd3
 
 ## ソースコード
 
-https://github.com/LNSEAB/mmaccel
+https://github.com/LNSEAB/MMAccel
   
 ## ライセンス
 
