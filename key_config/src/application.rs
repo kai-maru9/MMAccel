@@ -233,6 +233,7 @@ impl Application {
             .title("MMAccel キー設定")
             .position(settings.window_position)
             .inner_size(settings.window_size)
+            .icon(wita::Icon::Resource(101))
             .accept_drag_files(true)
             .style(
                 wita::WindowStyle::default()
