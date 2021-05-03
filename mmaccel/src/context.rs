@@ -9,6 +9,7 @@ use std::sync::{atomic, atomic::AtomicBool, Arc};
 pub enum MenuItem {
     LaunchConfig,
     RaiseTimerResolution(bool),
+    KillFocusWithClick(bool),
     Version,
 }
 
@@ -18,6 +19,9 @@ impl MenuCommand for MenuItem {
             _ if v == std::mem::discriminant(&Self::LaunchConfig) => Self::LaunchConfig,
             _ if v == std::mem::discriminant(&Self::RaiseTimerResolution(false)) => {
                 Self::RaiseTimerResolution(item_type.as_with_check().unwrap())
+            }
+            _ if v == std::mem::discriminant(&Self::KillFocusWithClick(false)) => {
+                Self::KillFocusWithClick(item_type.as_with_check().unwrap())
             }
             _ if v == std::mem::discriminant(&Self::Version) => Self::Version,
             _ => unimplemented!(),
@@ -43,6 +47,7 @@ impl MmdWindow {
                     "タイマーの精度を上げる",
                     settings.raise_timer_resolution,
                 )
+                .with_check(&MenuItem::KillFocusWithClick(true), "クリックで入力状態を解除", settings.kill_focus_with_click)
                 .separator()
                 .item(&MenuItem::Version, "バージョン情報")
                 .build(),
@@ -78,6 +83,7 @@ fn version_info(hwnd: HWND) {
 #[derive(Debug, serde::Serialize)]
 struct Settings {
     raise_timer_resolution: bool,
+    kill_focus_with_click: bool,
 }
 
 impl Settings {
@@ -97,6 +103,10 @@ impl Settings {
                         .get("raise_timer_resolution")
                         .and_then(|v| v.as_bool())
                         .unwrap_or(default.raise_timer_resolution),
+                    kill_focus_with_click: obj
+                        .get("kill_focus_with_click")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(default.kill_focus_with_click)
                 })
             }
             Err(_) => None,
@@ -114,6 +124,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             raise_timer_resolution: true,
+            kill_focus_with_click: true,
         }
     }
 }
@@ -245,6 +256,9 @@ impl Context {
                         Some(MenuItem::RaiseTimerResolution(b)) => {
                             self.time_period = if b { Some(TimePeriod::new(1)) } else { None };
                         }
+                        Some(MenuItem::KillFocusWithClick(b)) => {
+                            self.settings.kill_focus_with_click = b;
+                        }
                         Some(MenuItem::Version) => version_info(mmd_window.window),
                         _ => {}
                     }
@@ -264,11 +278,13 @@ impl Context {
                 }
             }
             WM_LBUTTONDOWN => unsafe {
-                let main_window = self.mmd_window.as_ref().unwrap().window;
-                let focus = GetFocus();
-                if GetParent(focus) == main_window && get_class_name(focus).to_ascii_uppercase() == "EDIT" {
-                    SetFocus(main_window);
-                    log::debug!("button down and kill focus");
+                if self.settings.kill_focus_with_click {
+                    let main_window = self.mmd_window.as_ref().unwrap().window;
+                    let focus = GetFocus();
+                    if GetParent(focus) == main_window && get_class_name(focus).to_ascii_uppercase() == "EDIT" {
+                        SetFocus(main_window);
+                        log::debug!("button down and kill focus");
+                    }
                 }
             }
             WM_APP => {
