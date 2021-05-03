@@ -13,7 +13,7 @@ fn error(msg: &str) {
     message_box(
         None,
         msg,
-        "d3d9.dllエラー",
+        "d3d9.dll エラー",
         MESSAGEBOX_STYLE::MB_OK | MESSAGEBOX_STYLE::MB_ICONERROR,
     );
 }
@@ -64,17 +64,24 @@ pub unsafe extern "system" fn DllMain(_: HINSTANCE, reason: u32, _: *mut std::ff
         DLL_PROCESS_ATTACH => {
             let path = get_module_path().parent().unwrap().to_path_buf();
             let d3d9 = Library::new(get_system_directory().join("d3d9.dll"));
-            if let Ok(d3d9) = d3d9 {
-                D3D9.set(d3d9).unwrap();
-            } else {
-                error("d3d9.dllを読み込めませんでした");
-                return FALSE;
+            match d3d9 {
+                Ok(d3d9) => {
+                    D3D9.set(d3d9).unwrap();
+                }
+                Err(e) => {
+                    error(&format!("d3d9.dllを読み込めませんでした ({:?})", e));
+                    return FALSE;
+                }
             }
             let mmaccel = Library::new(path.join("MMAccel").join("mmaccel.dll"));
-            if let Ok(mmaccel) = mmaccel {
-                MMACCEL.set(mmaccel).unwrap();
-            } else {
-                error("mmaccel.dllを読み込めませんでした。");
+            match mmaccel {
+                Ok(mmaccel) => {
+                    MMACCEL.set(mmaccel).unwrap();
+                }
+                Err(e) => {
+                    error(&format!("mmaccel.dllを読み込めませんでした ({:?})", e));
+                    return FALSE;
+                }
             }
             let mme = Library::new(path.join("MMHack.dll"));
             if let Ok(mme) = mme {
