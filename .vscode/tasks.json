@@ -11,9 +11,9 @@
 			"group": "build",
 			"options": {
 				"shell": {
-					"executable": "cmd.exe",
+					"executable": "powershell.exe",
 					"args": [
-						"/c"
+						"-c"
 					]
 				},
 				"cwd": "${workspaceFolder}"
@@ -50,9 +50,9 @@
 			"group": "build",
 			"options": {
 				"shell": {
-					"executable": "cmd.exe",
+					"executable": "powershell.exe",
 					"args": [
-						"/c"
+						"-c"
 					]
 				},
 				"cwd": "${workspaceFolder}"
