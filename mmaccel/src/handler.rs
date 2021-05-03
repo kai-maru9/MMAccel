@@ -13,7 +13,7 @@ pub struct Handler {
 }
 
 impl Handler {
-    pub fn new(mmd_map: MmdMap, key_map: KeyMap) -> Self {
+    pub fn new(mmd_map: &MmdMap, key_map: KeyMap) -> Self {
         let mut key_states = HashMap::new();
         mmd_map
             .iter()

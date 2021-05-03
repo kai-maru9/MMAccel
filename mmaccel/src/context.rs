@@ -71,7 +71,7 @@ impl Drop for TimePeriod {
 }
 
 fn version_info(hwnd: HWND) {
-    let text = format!("MMAccel v{}\nby LNSEAB", env!("CARGO_PKG_VERSION"));
+    let text = format!("MMAccel {}\nby LNSEAB", env!("CARGO_PKG_VERSION"));
     message_box(Some(hwnd), text, "", MESSAGEBOX_STYLE::MB_OK);
 }
 
@@ -103,8 +103,8 @@ impl Settings {
         }
     }
 
-    fn to_file(&self) {
-        if let Ok(file) = std::fs::File::create(Self::PATH) {
+    fn to_file(&self, module_path: &std::path::Path) {
+        if let Ok(file) = std::fs::File::create(module_path.join(Self::PATH)) {
             serde_json::to_writer_pretty(std::io::BufWriter::new(file), self).ok();
         }
     }
@@ -124,6 +124,7 @@ const KEY_MAP_PATH: &str = "MMAccel/key_map.json";
 pub struct Context {
     module_path: std::path::PathBuf,
     settings: Settings,
+    mmd_map: MmdMap,
     _call_window_proc_ret: HookHandle,
     _get_message_handle: HookHandle,
     mmd_window: Option<MmdWindow>,
@@ -139,21 +140,22 @@ impl Context {
     pub fn new(module_path: std::path::PathBuf) -> std::io::Result<Self> {
         let settings = Settings::from_file(&module_path).unwrap_or_default();
         log::debug!("{:?}", settings);
-        let mmd_map = MmdMap::from_file(MMD_MAP_PATH)?;
-        let key_map = KeyMap::from_file(KEY_MAP_PATH).unwrap_or_else(|_| {
+        let mmd_map = MmdMap::from_file(module_path.join(MMD_MAP_PATH))?;
+        let key_map = KeyMap::from_file(module_path.join(KEY_MAP_PATH)).unwrap_or_else(|_| {
             let m = KeyMap::default();
-            if let Ok(file) = std::fs::File::create(KEY_MAP_PATH) {
+            if let Ok(file) = std::fs::File::create(module_path.join(KEY_MAP_PATH)) {
                 serde_json::to_writer_pretty(std::io::BufWriter::new(file), &m).ok();
                 log::debug!("written key_map.json");
             }
             m
         });
-        let handler = Handler::new(mmd_map, key_map);
+        let handler = Handler::new(&mmd_map, key_map);
         let file_monitor = FileMonitor::new();
         let time_period = settings.raise_timer_resolution.then(|| TimePeriod::new(1));
         Ok(Self {
             module_path,
             settings,
+            mmd_map,
             _call_window_proc_ret: HookHandle::new(
                 WINDOWS_HOOK_ID::WH_CALLWNDPROCRET,
                 Some(hook_call_window_proc_ret),
@@ -257,19 +259,15 @@ impl Context {
             }
             WM_APP => {
                 if !self.latest_key_map.swap(true, atomic::Ordering::SeqCst) {
-                    let mmd_map = MmdMap::from_file(MMD_MAP_PATH);
-                    if mmd_map.is_err() {
-                        return;
-                    }
-                    let key_map = KeyMap::from_file(KEY_MAP_PATH).unwrap_or_else(|_| {
+                    let key_map = KeyMap::from_file(self.module_path.join(KEY_MAP_PATH)).unwrap_or_else(|_| {
                         let m = KeyMap::default();
-                        if let Ok(file) = std::fs::File::create(KEY_MAP_PATH) {
+                        if let Ok(file) = std::fs::File::create(self.module_path.join(KEY_MAP_PATH)) {
                             serde_json::to_writer_pretty(std::io::BufWriter::new(file), &m).ok();
                             log::debug!("written key_map.json");
                         }
                         m
                     });
-                    self.handler = Handler::new(mmd_map.unwrap(), key_map);
+                    self.handler = Handler::new(&self.mmd_map, key_map);
                 }
             }
             _ => {}
@@ -292,7 +290,7 @@ impl Context {
 impl Drop for Context {
     fn drop(&mut self) {
         self.settings.raise_timer_resolution = self.time_period.is_some();
-        self.settings.to_file();
+        self.settings.to_file(&self.module_path);
         log::debug!("drop Context");
     }
 }
