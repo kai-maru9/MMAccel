@@ -263,6 +263,14 @@ impl Context {
                     self.handler.key_up(data.wParam.0 as u32);
                 }
             }
+            WM_LBUTTONDOWN => unsafe {
+                let main_window = self.mmd_window.as_ref().unwrap().window;
+                let focus = GetFocus();
+                if GetParent(focus) == main_window && get_class_name(focus).to_ascii_uppercase() == "EDIT" {
+                    SetFocus(main_window);
+                    log::debug!("button down and kill focus");
+                }
+            }
             WM_APP => {
                 if !self.latest_key_map.swap(true, atomic::Ordering::SeqCst) {
                     let key_map = KeyMap::from_file(self.module_path.join(KEY_MAP_PATH)).unwrap_or_else(|_| {
