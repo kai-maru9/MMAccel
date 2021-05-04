@@ -19,6 +19,12 @@ use file_monitor::*;
 use injection::*;
 use menu::*;
 use once_cell::sync::OnceCell;
+use log4rs::append::{
+    console::ConsoleAppender,
+    file::FileAppender,
+};
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
 
 static mut CONTEXT: OnceCell<Context> = OnceCell::new();
 
@@ -35,10 +41,16 @@ unsafe extern "system" fn hook_call_window_proc_ret(code: i32, wparam: WPARAM, l
     if code < 0 || code != HC_ACTION as i32 {
         return CallNextHookEx(HHOOK::NULL, code, wparam, lparam);
     }
-    CONTEXT
-        .get_mut()
-        .unwrap()
-        .call_window_proc_ret(&*(lparam.0 as *const CWPRETSTRUCT));
+    let ret = std::panic::catch_unwind(|| {
+        CONTEXT
+            .get_mut()
+            .unwrap()
+            .call_window_proc_ret(&*(lparam.0 as *const CWPRETSTRUCT));
+    });
+    if ret.is_err() {
+        PostQuitMessage(1);
+        return LRESULT(0);
+    }
     CallNextHookEx(HHOOK::NULL, code, wparam, lparam)
 }
 
@@ -46,11 +58,18 @@ unsafe extern "system" fn hook_get_message(code: i32, wparam: WPARAM, lparam: LP
     if code < 0 {
         return CallNextHookEx(HHOOK::NULL, code, wparam, lparam);
     }
-    let msg = &mut *(lparam.0 as *mut MSG);
-    if CONTEXT.get_mut().unwrap().get_message(msg) {
-        return LRESULT(0);
+    let ret = std::panic::catch_unwind(|| {
+        let msg = &mut *(lparam.0 as *mut MSG);
+        CONTEXT.get_mut().unwrap().get_message(msg)
+    });
+    match ret {
+        Ok(true) => LRESULT(0),
+        Ok(false) => CallNextHookEx(HHOOK::NULL, code, wparam, lparam),
+        Err(_) => {
+            PostQuitMessage(1);
+            LRESULT(0)
+        }
     }
-    CallNextHookEx(HHOOK::NULL, code, wparam, lparam)
 }
 
 unsafe extern "system" fn proxy_get_key_state(vk: i32) -> i16 {
@@ -61,11 +80,42 @@ unsafe extern "system" fn proxy_get_key_state(vk: i32) -> i16 {
     }
 }
 
+fn build_logger(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error + 'static>> {
+    const FORMAT: &str = "[{d(%Y-%m-%d %H:%M:%S%z)} {l} (({f}:{L}))] {m}\n";
+    let stdout = ConsoleAppender::builder()
+        .encoder(Box::new(PatternEncoder::new(FORMAT)))
+        .build();
+    let file = FileAppender::builder()
+        .encoder(Box::new(PatternEncoder::new(FORMAT)))
+        .build(path.join("MMAccel").join("mmaccel.log"))?;
+    let config = Config::builder()
+        .appender(Appender::builder().build("stdout", Box::new(stdout)))
+        .appender(Appender::builder().build("file", Box::new(file)))
+        .build(Root::builder().appender("stdout").appender("file").build(log::LevelFilter::Debug))?;
+    log4rs::init_config(config)?;
+    Ok(())
+}
+
 #[no_mangle]
 pub unsafe extern "system" fn mmaccel_run(base_addr: usize) {
-    env_logger::init();
-    log::info!("MMAccel start");
     let path = get_module_path().parent().unwrap().to_path_buf();
+    if let Err(e) = build_logger(&path) {
+        error(&format!("MMAccelのログを取れません ({})", e));
+    }
+    std::panic::set_hook(Box::new(|info| {
+        let msg = if let Some(location) = info.location() {
+            if let Some(s) = info.payload().downcast_ref::<&str>() {
+                format!("panic!!! {} ({}:{})", s, location.file(), location.line())
+            } else {
+                format!("panic!!! ({}:{})", location.file(), location.line())
+            }
+        } else {
+            "panic!!! unknown".into()
+        };
+        log::error!("{}", &msg);
+        error(&msg);
+    }));
+    log::info!("MMAccel start");
     if let Ok(ctx) = Context::new(path) {
         CONTEXT.set(ctx).ok();
     } else {
