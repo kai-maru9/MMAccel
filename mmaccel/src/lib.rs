@@ -46,7 +46,11 @@ unsafe extern "system" fn hook_get_message(code: i32, wparam: WPARAM, lparam: LP
     if code < 0 {
         return CallNextHookEx(HHOOK::NULL, code, wparam, lparam);
     }
-    CONTEXT.get_mut().unwrap().get_message(&mut *(lparam.0 as *mut MSG));
+    let msg = &mut *(lparam.0 as *mut MSG);
+    CONTEXT.get_mut().unwrap().get_message(msg);
+    if matches!(msg.message, WM_KEYDOWN | WM_KEYUP | WM_SYSKEYDOWN | WM_SYSKEYUP) {
+        return LRESULT(0);
+    }
     CallNextHookEx(HHOOK::NULL, code, wparam, lparam)
 }
 

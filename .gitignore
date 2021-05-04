@@ -4,6 +4,8 @@ MMHack.dll
 MMEffect.dll
 /MikuMikuDance_v932x64/UserFile
 /MikuMikuDance_v932x64/MMAccel
-/MikuMikuDance_v932x64/Data/mmconfig.ini
+/MikuMikuDance_v932x64/Data/*.ini
+/MikuMikuDance_v932x64/*.ini
+/MikuMikuDance_v932x64/*.dll
 /package
 package.ps1

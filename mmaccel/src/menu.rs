@@ -174,7 +174,7 @@ impl<T: MenuCommand> Menu<T> {
     pub fn recv_command(&self, wparam: WPARAM) -> Option<T> {
         if ((wparam.0 >> 16) & 0xffff) == 0 {
             let id = (wparam.0 & 0xffff) as i32 - ROOT_ID as i32;
-            if id < 0 {
+            if id < 0 || id >= self.table.len() as _ {
                 return None;
             }
             let id = id as u32;
