@@ -23,7 +23,7 @@
 			"args": [],
 			"cwd": "${workspaceFolder}/MikuMikuDance_v932x64",
 			"environment": [
-				{ "name": "RUST_LOG", "value": "warn" },
+				{ "name": "RUST_LOG", "value": "info" },
 			],
 			"console": "internalConsole",
 			"preLaunchTask": "release copy",
@@ -65,7 +65,7 @@
 			"args": [],
 			"cwd": "${workspaceFolder}/MikuMikuDance_v932x64/MMAccel",
 			"environment": [
-				{ "name": "RUST_LOG", "value": "warn" },
+				{ "name": "RUST_LOG", "value": "info" },
 			],
 			"console": "internalConsole",
 			"preLaunchTask": "release copy",

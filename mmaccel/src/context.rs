@@ -219,7 +219,7 @@ impl Context {
         }
     }
 
-    pub fn get_message(&mut self, data: &mut MSG) {
+    pub fn get_message(&mut self, data: &mut MSG) -> bool {
         match data.message {
             WM_COMMAND => {
                 if let Some(mmd_window) = self.mmd_window.as_ref() {
@@ -269,12 +269,14 @@ impl Context {
                 if data.hwnd == main_window || GetParent(data.hwnd) == main_window {
                     self.handler
                         .key_down(data.wParam.0 as u32, self.mmd_window.as_ref().unwrap().window, data.hwnd);
+                    return true;
                 }
             }
             WM_KEYUP | WM_SYSKEYUP => unsafe {
                 let main_window = self.mmd_window.as_ref().unwrap().window;
                 if data.hwnd == main_window || GetParent(data.hwnd) == main_window {
                     self.handler.key_up(data.wParam.0 as u32);
+                    return true;
                 }
             }
             WM_LBUTTONDOWN => unsafe {
@@ -302,6 +304,7 @@ impl Context {
             }
             _ => {}
         }
+        false
     }
 
     pub fn get_key_state(&self, vk: u32) -> Option<u16> {

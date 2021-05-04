@@ -5,6 +5,7 @@ use bindings::Windows::Win32::{SystemServices::*, WindowsAndMessaging::*};
 use libloading::Library;
 use once_cell::sync::OnceCell;
 
+static mut MSIMG32: OnceCell<Library> = OnceCell::new();
 static mut D3D9: OnceCell<Library> = OnceCell::new();
 static mut MME: OnceCell<Library> = OnceCell::new();
 static mut MMACCEL: OnceCell<Library> = OnceCell::new();
@@ -63,6 +64,12 @@ pub unsafe extern "system" fn DllMain(_: HINSTANCE, reason: u32, _: *mut std::ff
     match reason {
         DLL_PROCESS_ATTACH => {
             let path = get_module_path().parent().unwrap().to_path_buf();
+            if path.join("MMPlus.dll").exists() {
+                let msimg = Library::new(path.join("MSIMG32.dll"));
+                if let Ok(msimg) = msimg {
+                    MSIMG32.set(msimg).ok();
+                }
+            }
             let d3d9 = Library::new(get_system_directory().join("d3d9.dll"));
             match d3d9 {
                 Ok(d3d9) => {
@@ -95,6 +102,7 @@ pub unsafe extern "system" fn DllMain(_: HINSTANCE, reason: u32, _: *mut std::ff
             MME.take();
             MMACCEL.take();
             D3D9.take();
+            MSIMG32.take();
         }
         _ => {}
     }

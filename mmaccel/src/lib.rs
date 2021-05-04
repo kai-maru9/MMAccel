@@ -47,8 +47,7 @@ unsafe extern "system" fn hook_get_message(code: i32, wparam: WPARAM, lparam: LP
         return CallNextHookEx(HHOOK::NULL, code, wparam, lparam);
     }
     let msg = &mut *(lparam.0 as *mut MSG);
-    CONTEXT.get_mut().unwrap().get_message(msg);
-    if matches!(msg.message, WM_KEYDOWN | WM_KEYUP | WM_SYSKEYDOWN | WM_SYSKEYUP) {
+    if CONTEXT.get_mut().unwrap().get_message(msg) {
         return LRESULT(0);
     }
     CallNextHookEx(HHOOK::NULL, code, wparam, lparam)
@@ -65,8 +64,8 @@ unsafe extern "system" fn proxy_get_key_state(vk: i32) -> i16 {
 #[no_mangle]
 pub unsafe extern "system" fn mmaccel_run(base_addr: usize) {
     env_logger::init();
-    log::debug!("mmaccel_run");
-    let path = dbg!(get_module_path().parent().unwrap().to_path_buf());
+    log::info!("MMAccel start");
+    let path = get_module_path().parent().unwrap().to_path_buf();
     if let Ok(ctx) = Context::new(path) {
         CONTEXT.set(ctx).ok();
     } else {
@@ -88,4 +87,5 @@ pub unsafe extern "system" fn mmaccel_run(base_addr: usize) {
 #[no_mangle]
 pub unsafe extern "system" fn mmaccel_end() {
     CONTEXT.take();
+    log::info!("MMAccel end");
 }
