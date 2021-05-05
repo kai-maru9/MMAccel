@@ -87,6 +87,7 @@ fn build_logger(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error 
         .build();
     let file = FileAppender::builder()
         .encoder(Box::new(PatternEncoder::new(FORMAT)))
+        .append(false)
         .build(path.join("MMAccel").join("mmaccel.log"))?;
     let config = Config::builder()
         .appender(Appender::builder().build("stdout", Box::new(stdout)))
@@ -114,6 +115,7 @@ pub unsafe extern "system" fn mmaccel_run(base_addr: usize) {
         };
         log::error!("{}", &msg);
         error(&msg);
+        log::info!("MMAccel panic");
     }));
     log::info!("MMAccel start");
     if let Ok(ctx) = Context::new(path) {
