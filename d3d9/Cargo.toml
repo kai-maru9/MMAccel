@@ -5,6 +5,7 @@ authors = ["LNSEAB <691752+LNSEAB@users.noreply.github.com>"]
 edition = "2018"
 license = "MIT"
 repository = "https://github.com/LNSEAB/MMAccel"
+publish = false
 
 [lib]
 crate-type = ["cdylib"]
