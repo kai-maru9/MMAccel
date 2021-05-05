@@ -51,7 +51,7 @@ MMAccelのd3d9.dllではMMEを動作させることが出来ますが、MMEのd3
 
 ### MMPlusとの併用
 
-**MMPlusはMMAccelとの併用を動作保証外としているので、MMPlusの方にMMAccelの問い合わせをしないでください。**
+**MMPlusはMMAccelとの併用を動作保証外としているので、MMPlusの方にMMAccelや併用についての問い合わせをしないでください。**
 
 MMAccelを入れるとMMPlusのキーボードショートカットは動かなくなります。
 
