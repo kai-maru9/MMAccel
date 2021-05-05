@@ -17,14 +17,11 @@ use bindings::Windows::Win32::{
 use context::*;
 use file_monitor::*;
 use injection::*;
-use menu::*;
-use once_cell::sync::OnceCell;
-use log4rs::append::{
-    console::ConsoleAppender,
-    file::FileAppender,
-};
+use log4rs::append::{console, console::ConsoleAppender, file::FileAppender};
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
+use menu::*;
+use once_cell::sync::OnceCell;
 
 static mut CONTEXT: OnceCell<Context> = OnceCell::new();
 
@@ -84,6 +81,7 @@ fn build_logger(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error 
     const FORMAT: &str = "[{d(%Y-%m-%d %H:%M:%S%z)} {l} (({f}:{L}))] {m}\n";
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new(FORMAT)))
+        .target(console::Target::Stderr)
         .build();
     let file = FileAppender::builder()
         .encoder(Box::new(PatternEncoder::new(FORMAT)))
@@ -92,7 +90,12 @@ fn build_logger(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error 
     let config = Config::builder()
         .appender(Appender::builder().build("stdout", Box::new(stdout)))
         .appender(Appender::builder().build("file", Box::new(file)))
-        .build(Root::builder().appender("stdout").appender("file").build(log::LevelFilter::Debug))?;
+        .build(
+            Root::builder()
+                .appender("stdout")
+                .appender("file")
+                .build(log::LevelFilter::Debug),
+        )?;
     log4rs::init_config(config)?;
     Ok(())
 }

@@ -47,7 +47,11 @@ impl MmdWindow {
                     "タイマーの精度を上げる",
                     settings.raise_timer_resolution,
                 )
-                .with_check(&MenuItem::KillFocusWithClick(true), "クリックで入力状態を解除", settings.kill_focus_with_click)
+                .with_check(
+                    &MenuItem::KillFocusWithClick(true),
+                    "クリックで入力状態を解除",
+                    settings.kill_focus_with_click,
+                )
                 .separator()
                 .item(&MenuItem::Version, "バージョン情報")
                 .build(),
@@ -106,7 +110,7 @@ impl Settings {
                     kill_focus_with_click: obj
                         .get("kill_focus_with_click")
                         .and_then(|v| v.as_bool())
-                        .unwrap_or(default.kill_focus_with_click)
+                        .unwrap_or(default.kill_focus_with_click),
                 })
             }
             Err(_) => None,
@@ -267,18 +271,21 @@ impl Context {
             WM_KEYDOWN | WM_SYSKEYDOWN => unsafe {
                 let main_window = self.mmd_window.as_ref().unwrap().window;
                 if data.hwnd == main_window || GetParent(data.hwnd) == main_window {
-                    self.handler
-                        .key_down(data.wParam.0 as u32, self.mmd_window.as_ref().unwrap().window, data.hwnd);
+                    self.handler.key_down(
+                        data.wParam.0 as u32,
+                        self.mmd_window.as_ref().unwrap().window,
+                        data.hwnd,
+                    );
                     return true;
                 }
-            }
+            },
             WM_KEYUP | WM_SYSKEYUP => unsafe {
                 let main_window = self.mmd_window.as_ref().unwrap().window;
                 if data.hwnd == main_window || GetParent(data.hwnd) == main_window {
                     self.handler.key_up(data.wParam.0 as u32);
                     return true;
                 }
-            }
+            },
             WM_LBUTTONDOWN => unsafe {
                 if self.settings.kill_focus_with_click {
                     let main_window = self.mmd_window.as_ref().unwrap().window;
@@ -288,7 +295,7 @@ impl Context {
                         log::debug!("button down and kill focus");
                     }
                 }
-            }
+            },
             WM_APP => {
                 if !self.latest_key_map.swap(true, atomic::Ordering::SeqCst) {
                     let key_map = KeyMap::from_file(self.module_path.join(KEY_MAP_PATH)).unwrap_or_else(|_| {
