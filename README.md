@@ -51,15 +51,21 @@ FPS無制限時のフレームレートが上がったりします。
 MMAccelのd3d9.dllではMMEを動作させることが出来ますが、MMEのd3d9.dllではMMAccelを動作させることが出来ません。
 また、MMEにおいてCtrl+Shift+Eが「エフェクト使用」で使われており、MMAccelで割り当てると割り当てた動作が行われるのと同時にMMEの「エフェクト使用」をクリックした状態になります。
 
-## ソースコード
+### MMPlusとの併用
+
+**MMPlusはMMAccelとの併用を動作保証外としているので、MMPlusの方にMMAccelの問い合わせをすることはおやめください。**
+
+MMAccelを入れるとMMPlusのキーボードショートカットは動かなくなります。
+
+## リポジトリ
 
 https://github.com/LNSEAB/MMAccel
   
 ## ライセンス
 
-[MIT License](LICENSE)
+MIT License (リポジトリのMikuMikuDance_v932x64は除く）
 
-(リポジトリのMikuMikuDance_v932x64は除く）
+使用しているクレートのライセンスはMMAccelフォルダ内のLICENSE-DEPENDENCIESにあります。
 
 ## 謝辞
 
@@ -68,3 +74,5 @@ MMEについてご教示くださいました舞力介入Pに御礼申し上げ�
 -------------------------------------------------
 
 Copyright (c) 2021 LNSEAB
+
+twitter : http://twitter.com/lnseab
