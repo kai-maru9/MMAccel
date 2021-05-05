@@ -7,7 +7,7 @@ fn write_package_ps1(version: &str) {
 }
 
 fn write_version_file(version: &str) {
-    let file = std::fs::File::create("../package/version").unwrap();
+    let file = std::fs::File::create("../version").unwrap();
     let mut writer = std::io::BufWriter::new(file);
     write!(writer, "{}", version).unwrap();
 }

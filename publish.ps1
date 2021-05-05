@@ -3,8 +3,8 @@ if (!(Test-Path "package")) {
     exit
 }
 
-$version = Get-Content "package/version"
+$version = Get-Content "version"
 
-git tag -a $version -m "MMAccel $version"
+git tag $version 
 git push origin
 git push origin $version
