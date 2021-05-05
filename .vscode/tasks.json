@@ -92,6 +92,23 @@
 				"cwd": "${workspaceFolder}"
 			},
 			"problemMatcher": []
+		},
+		{
+			"label": "publish",
+			"group": "build",
+			"type": "shell",
+			"command": "./publish.ps1",
+			"dependsOn": "package",
+			"options": {
+				"shell": {
+					"executable": "powershell.exe",
+					"args": [
+						"-c"
+					]
+				},
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": []
 		}
 	]
 }
