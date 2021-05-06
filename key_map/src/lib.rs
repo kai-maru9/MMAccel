@@ -101,7 +101,7 @@ impl Keys {
 
         self.0.clear();
         for (i, k) in v.iter().enumerate() {
-            if i <= 0xe0 && (k & 0x80) != 0 && !is_lr_key(i as _) {
+            if (0x07..0xe0).contains(&i) && (k & 0x80) != 0 && !is_lr_key(i as _) {
                 self.0.push(i as u32);
             }
         }
