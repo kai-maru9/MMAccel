@@ -5,6 +5,7 @@ if (!(Test-Path "package")) {
 
 $version = Get-Content "version"
 
-git tag $version 
+git commit --allow-empty -am "MMAccel $version"
+git tag $version
 git push origin
 git push origin $version
