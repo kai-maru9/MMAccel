@@ -187,6 +187,11 @@ impl Handler {
             }
         }
     }
+    
+    #[inline]
+    pub fn input_state(&self, vk: u32) -> bool {
+        (self.input[vk as usize] & 0x80) != 0
+    }
 
     #[inline]
     pub fn is_pressed(&self, vk: u32) -> bool {

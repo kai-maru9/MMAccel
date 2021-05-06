@@ -316,7 +316,8 @@ impl Context {
 
     pub fn get_key_state(&self, vk: u32) -> Option<u16> {
         if vk >= 0x07 {
-            if self.handler.is_pressed(vk) {
+            let special_keys = (vk == VK_SHIFT).then(|| self.handler.input_state(vk)).unwrap_or(false);
+            if self.handler.is_pressed(vk) || special_keys {
                 Some(0xff80)
             } else {
                 Some(0x0000)
