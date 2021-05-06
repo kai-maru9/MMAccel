@@ -31,6 +31,7 @@ impl MenuCommand for MenuItem {
 
 struct MmdWindow {
     window: HWND,
+    sub_window: Option<HWND>,
     menu: Menu<MenuItem>,
 }
 
@@ -39,6 +40,7 @@ impl MmdWindow {
     fn new(window: HWND, settings: &Settings) -> Self {
         Self {
             window,
+            sub_window: None,
             menu: MenuBuilder::new(window, "MMAccel")
                 .item(&MenuItem::LaunchConfig, "キー設定")
                 .separator()
@@ -205,6 +207,12 @@ impl Context {
                     }
                 });
             }
+            WM_CREATE if get_class_name(data.hwnd) == "MicWindow" => {
+                log::debug!("created SubWindow");
+                if let Some(mmd_window) = self.mmd_window.as_mut() {
+                    mmd_window.sub_window = Some(data.hwnd);
+                }
+            }
             WM_DESTROY if self.mmd_window.as_ref().map_or(false, |mw| mw.window == data.hwnd) => {
                 if let Some(kc) = self.key_config {
                     unsafe {
@@ -218,6 +226,16 @@ impl Context {
                     log::debug!("stop FileMonitor");
                 }
                 log::debug!("destroyed MainWindow");
+            }
+            WM_DESTROY
+                if self
+                    .mmd_window
+                    .as_ref()
+                    .map_or(false, |mw| mw.sub_window == Some(data.hwnd)) =>
+            {
+                let mmd_window = self.mmd_window.as_mut().unwrap();
+                mmd_window.sub_window = None;
+                log::debug!("destroyed SubWindow");
             }
             _ => {}
         }
@@ -269,19 +287,32 @@ impl Context {
                 }
             }
             WM_KEYDOWN | WM_SYSKEYDOWN => unsafe {
-                let main_window = self.mmd_window.as_ref().unwrap().window;
-                if data.hwnd == main_window || GetParent(data.hwnd) == main_window {
+                let mmd_window = self.mmd_window.as_ref().unwrap();
+                let main_window = mmd_window.window;
+                let sub_window = mmd_window.sub_window;
+                let cond = data.hwnd == main_window
+                    || GetParent(data.hwnd) == main_window
+                    || Some(data.hwnd) == sub_window
+                    || sub_window.map_or(false, |sw| GetParent(data.hwnd) == sw);
+                if cond {
                     self.handler.key_down(
                         data.wParam.0 as u32,
-                        self.mmd_window.as_ref().unwrap().window,
+                        main_window,
+                        sub_window,
                         data.hwnd,
                     );
                     return true;
                 }
             },
             WM_KEYUP | WM_SYSKEYUP => unsafe {
-                let main_window = self.mmd_window.as_ref().unwrap().window;
-                if data.hwnd == main_window || GetParent(data.hwnd) == main_window {
+                let mmd_window = self.mmd_window.as_ref().unwrap();
+                let main_window = mmd_window.window;
+                let sub_window = mmd_window.sub_window;
+                let cond = data.hwnd == main_window
+                    || GetParent(data.hwnd) == main_window
+                    || Some(data.hwnd) == sub_window
+                    || sub_window.map_or(false, |sw| GetParent(data.hwnd) == sw);
+                if cond {
                     self.handler.key_up(data.wParam.0 as u32);
                     return true;
                 }
