@@ -166,8 +166,9 @@ impl Handler {
             }
         }
 
-        self.input[vk as usize] = 0x80;
+        get_keyboard_state(&mut self.input);
         self.input_keys.keyboard_state(&self.input);
+        log::debug!("key_down input_keys = {:?}", self.input_keys);
         if let Some(item) = self.handler.get(&self.input_keys) {
             handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window, sub_window, hwnd);
             return;
@@ -178,9 +179,10 @@ impl Handler {
         }
     }
 
-    pub fn key_up(&mut self, vk: u32) {
-        self.input[vk as usize] = 0x00;
+    pub fn key_up(&mut self, _vk: u32) {
+        get_keyboard_state(&mut self.input);
         self.input_keys.keyboard_state(&self.input);
+        log::debug!("key_up input_keys = {:?}", self.input_keys);
         for (keys, kind) in self.handler.iter() {
             if let ItemKind::Key(k) = kind {
                 if !keys.is_included(&self.input_keys) {
