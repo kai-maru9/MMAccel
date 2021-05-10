@@ -77,7 +77,11 @@ impl Handler {
                 }
                 ItemKind::Button(id) => unsafe {
                     let hwnd = GetDlgItem(mmd_window, *id as _);
-                    let hwnd = hwnd.is_null().then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _))).flatten().unwrap_or(hwnd);
+                    let hwnd = hwnd
+                        .is_null()
+                        .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
+                        .flatten()
+                        .unwrap_or(hwnd);
                     if IsWindowVisible(hwnd) == TRUE && IsWindowEnabled(hwnd) == TRUE {
                         PostMessageA(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
                         log::debug!("Button: 0x{:x}", id);
@@ -85,7 +89,11 @@ impl Handler {
                 },
                 ItemKind::Edit(id) => unsafe {
                     let hwnd = GetDlgItem(mmd_window, *id as _);
-                    let hwnd = hwnd.is_null().then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _))).flatten().unwrap_or(hwnd);
+                    let hwnd = hwnd
+                        .is_null()
+                        .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
+                        .flatten()
+                        .unwrap_or(hwnd);
                     if IsWindowVisible(hwnd) == TRUE && IsWindowEnabled(hwnd) == TRUE {
                         SetFocus(hwnd);
                         log::debug!("Edit: 0x{:x}", id);
@@ -105,7 +113,11 @@ impl Handler {
                     }
 
                     let hwnd = GetDlgItem(mmd_window, *id as _);
-                    let hwnd = hwnd.is_null().then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _))).flatten().unwrap_or(hwnd);
+                    let hwnd = hwnd
+                        .is_null()
+                        .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
+                        .flatten()
+                        .unwrap_or(hwnd);
                     if IsWindowVisible(hwnd) == FALSE || IsWindowEnabled(hwnd) == FALSE {
                         return;
                     }
@@ -170,12 +182,28 @@ impl Handler {
         self.input_keys.keyboard_state(&self.input);
         log::debug!("key_down input_keys = {:?}", self.input_keys);
         if let Some(item) = self.handler.get(&self.input_keys) {
-            handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window, sub_window, hwnd);
+            handle(
+                item,
+                &mut self.key_states,
+                &self.folds,
+                &self.unfolds,
+                mmd_window,
+                sub_window,
+                hwnd,
+            );
             return;
         }
         self.input_keys.vk(vk);
         if let Some(item) = self.handler.get(&self.input_keys) {
-            handle(item, &mut self.key_states, &self.folds, &self.unfolds, mmd_window, sub_window, hwnd);
+            handle(
+                item,
+                &mut self.key_states,
+                &self.folds,
+                &self.unfolds,
+                mmd_window,
+                sub_window,
+                hwnd,
+            );
         }
     }
 
