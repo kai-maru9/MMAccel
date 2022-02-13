@@ -3,7 +3,8 @@
 Simply said, this is an MMD plugin that allows you to set keybinds. Written in Rust (Not l33tcode which is sad), I already explained what it does.
 This is a translation effort, primarily using DeepL. If you actually do know japanese, contributing is highly appreciated.
 There are no releases yet.
-This program is licensed with the MIT license. So is this translation effort.
+With the exception of the copy of MikuMikuDance included in the folders, this program has an MIT license, allowing anyone to modify and tinker with the program.
+This translation effort is by default licensed with this too but it's like a fork and idc
 
 # MMAccel
 
