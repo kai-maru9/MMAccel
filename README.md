@@ -6,6 +6,8 @@ There are no releases yet.
 With the exception of the copy of MikuMikuDance included in the folders, this program has an MIT license, allowing anyone to modify and tinker with the program.
 This translation effort is by default licensed with this too but it's like a fork and idc
 
+A new discovery has been made. There's only two json files to edit to translate the main content. This project will now focus on that.
+
 # MMAccel
 
 MMDにショートカット+αを追加するツール
