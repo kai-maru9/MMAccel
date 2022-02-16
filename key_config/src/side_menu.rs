@@ -18,10 +18,10 @@ impl SideMenu {
             let hwnd = CreateWindowExW(
                 WINDOW_EX_STYLE(0),
                 PWSTR(class_name.as_ptr() as _),
-                PWSTR::NULL,
-                WINDOW_STYLE::WS_CHILD
-                    | WINDOW_STYLE::WS_BORDER
-                    | WINDOW_STYLE::WS_VISIBLE
+                PWSTR::default(),
+                WS_CHILD
+                    | WS_BORDER
+                    | WS_VISIBLE
                     | WINDOW_STYLE(LVS_REPORT)
                     | WINDOW_STYLE(LVS_SHOWSELALWAYS)
                     | WINDOW_STYLE(LVS_SINGLESEL)
@@ -31,22 +31,22 @@ impl SideMenu {
                 size.width,
                 size.height,
                 HWND(parent.raw_handle() as _),
-                HMENU::NULL,
-                HINSTANCE::NULL,
+                HMENU(0),
+                HINSTANCE(0),
                 std::ptr::null_mut(),
             );
             let ex_style = SendMessageW(hwnd, LVM_GETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(0)).0 as u32;
             let ex_style = ex_style | LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_AUTOSIZECOLUMNS;
             SendMessageW(hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(ex_style as _));
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT,
-                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
+                mask: LVCF_WIDTH | LVCF_FMT,
+                fmt: LVCFMT_LEFT,
                 cx: size.width,
                 ..Default::default()
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(0), LPARAM(&column as *const _ as _));
             let theme = to_wchar("Explorer");
-            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok().ok();
+            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::default()).ok();
             Ok(Self { hwnd })
         }
     }
@@ -108,12 +108,12 @@ impl SideMenu {
             let size = size.to_physical(dpi as _);
             SetWindowPos(
                 self.hwnd,
-                HWND::NULL,
+                HWND(0),
                 position.x,
                 position.y,
                 size.width as _,
                 size.height as _,
-                SET_WINDOW_POS_FLAGS::SWP_NOZORDER,
+                SWP_NOZORDER,
             );
         }
     }

@@ -5,7 +5,7 @@ pub enum Error {
     #[error("IOエラー: {}", .0)]
     Io(std::io::Error),
     #[error("エラー {}: (0x{:08x}){}", .1, .0.code().0, .0.message())]
-    HResult(windows::Error, String),
+    HResult(windows::core::Error, String),
     #[error("{}({}:{})にエラーがあります", .1, .0.line(), .0.column())]
     JsonFile(serde_json::Error, String),
     #[error("データがおかしいです")]
@@ -23,7 +23,7 @@ impl Error {
         }
     }
 
-    pub fn hresult(e: windows::Error, text: impl AsRef<str>) -> Self {
+    pub fn hresult(e: windows::core::Error, text: impl AsRef<str>) -> Self {
         Self::HResult(e, text.as_ref().to_string())
     }
 

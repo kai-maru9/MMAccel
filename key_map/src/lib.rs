@@ -1,14 +1,17 @@
-use bindings::Windows::Win32::WindowsAndMessaging::*;
 use serde::ser::SerializeMap;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
+use windows::Win32::UI::Input::KeyboardAndMouse::*;
 
 pub fn vk_to_string(k: u32) -> String {
-    const ZERO: u32 = b'0' as _;
-    const Z: u32 = b'Z' as _;
-    match k {
-        k @ ZERO..=Z => (k as u8 as char).to_string(),
+    const ZERO: u16 = b'0' as _;
+    const Z: u16 = b'Z' as _;
+    const NUMPAD0: u16 = VK_NUMPAD0.0 as _;
+    const NUMPAD9: u16 = VK_NUMPAD9.0 as _;
+    const F1: u16 = VK_F1.0 as _;
+    const F24: u16 = VK_F24.0 as _;
+    match VIRTUAL_KEY(k as _) {
         VK_ESCAPE => "Esc".into(),
         VK_TAB => "Tab".into(),
         VK_CAPITAL => "CapsLock".into(),
@@ -32,7 +35,6 @@ pub fn vk_to_string(k: u32) -> String {
         VK_LEFT => "Left".into(),
         VK_RIGHT => "Right".into(),
         // VK_NUMLOCK => "NumLock".into(),
-        v @ VK_NUMPAD0..=VK_NUMPAD9 => format!("Num{}", v - VK_NUMPAD0),
         VK_ADD => "Num+".into(),
         VK_SUBTRACT => "Num-".into(),
         VK_MULTIPLY => "Num*".into(),
@@ -44,7 +46,6 @@ pub fn vk_to_string(k: u32) -> String {
         // VK_RCONTROL => "RCtrl".into(),
         // VK_LMENU => "LAlt".into(),
         // VK_RMENU => "RAlt".into(),
-        v @ VK_F1..=VK_F24 => format!("F{}", v - VK_F1 + 1),
         VK_OEM_MINUS => "-".into(),
         VK_OEM_PLUS => ";".into(),
         VK_OEM_COMMA => ",".into(),
@@ -57,7 +58,12 @@ pub fn vk_to_string(k: u32) -> String {
         VK_OEM_6 => "]".into(),
         VK_OEM_7 => "^".into(),
         VK_OEM_102 => "_".into(),
-        _ => format!("({})", k),
+        l => match l.0 {
+            v @ ZERO..=Z => (v as u8 as char).to_string(),
+            v @ NUMPAD0..=NUMPAD9 => format!("Num{}", v - VK_NUMPAD0.0),
+            v @ F1..=F24 => format!("F{}", v - VK_F1.0 + 1),
+            _ => format!("({})", l.0),
+        },
     }
 }
 
@@ -96,7 +102,12 @@ impl Keys {
     pub fn keyboard_state(&mut self, v: &[u8]) {
         #[inline]
         fn is_lr_key(k: u32) -> bool {
-            k == VK_LSHIFT || k == VK_RSHIFT || k == VK_LCONTROL || k == VK_RCONTROL || k == VK_LMENU || k == VK_RMENU
+            k == VK_LSHIFT.0 as u32
+                || k == VK_RSHIFT.0 as u32
+                || k == VK_LCONTROL.0 as u32
+                || k == VK_RCONTROL.0 as u32
+                || k == VK_LMENU.0 as u32
+                || k == VK_RMENU.0 as u32
         }
 
         self.0.clear();
@@ -233,24 +244,24 @@ impl<'de> serde::Deserialize<'de> for KeyMap {
 impl Default for KeyMap {
     fn default() -> Self {
         let mut m = Self(HashMap::new());
-        m.insert("Undo", Keys::from_slice(&[VK_CONTROL, b'Z' as _]));
-        m.insert("Redo", Keys::from_slice(&[VK_CONTROL, b'X' as _]));
+        m.insert("Undo", Keys::from_slice(&[VK_CONTROL.0 as _, b'Z' as _]));
+        m.insert("Redo", Keys::from_slice(&[VK_CONTROL.0 as _, b'X' as _]));
         m.insert("BoneSelect", Keys::from_slice(&[b'C' as _]));
         m.insert("BoneRotate", Keys::from_slice(&[b'X' as _]));
         m.insert("BoneMove", Keys::from_slice(&[b'Z' as _]));
         m.insert("BoneAllSelect", Keys::from_slice(&[b'A' as _]));
         m.insert("BoneUnregisterSelect", Keys::from_slice(&[b'S' as _]));
         m.insert("MenuViewHalfTransparency", Keys::from_slice(&[b'V' as _]));
-        m.insert("FramePrev", Keys::from_slice(&[VK_LEFT]));
-        m.insert("FrameNext", Keys::from_slice(&[VK_RIGHT]));
-        m.insert("MainChangeEditor", Keys::from_slice(&[VK_TAB]));
-        m.insert("FrameRegister", Keys::from_slice(&[VK_RETURN]));
-        m.insert("FrameKeyPrev", Keys::from_slice(&[VK_CONTROL, VK_LEFT]));
-        m.insert("FrameKeyNext", Keys::from_slice(&[VK_CONTROL, VK_RIGHT]));
-        m.insert("BonePrev", Keys::from_slice(&[VK_UP]));
-        m.insert("BoneNext", Keys::from_slice(&[VK_DOWN]));
-        m.insert("KeyCopy", Keys::from_slice(&[VK_CONTROL, b'C' as _]));
-        m.insert("KeyPaste", Keys::from_slice(&[VK_CONTROL, b'V' as _]));
+        m.insert("FramePrev", Keys::from_slice(&[VK_LEFT.0 as _]));
+        m.insert("FrameNext", Keys::from_slice(&[VK_RIGHT.0 as _]));
+        m.insert("MainChangeEditor", Keys::from_slice(&[VK_TAB.0 as _]));
+        m.insert("FrameRegister", Keys::from_slice(&[VK_RETURN.0 as _]));
+        m.insert("FrameKeyPrev", Keys::from_slice(&[VK_CONTROL.0 as _, VK_LEFT.0 as _]));
+        m.insert("FrameKeyNext", Keys::from_slice(&[VK_CONTROL.0 as _, VK_RIGHT.0 as _]));
+        m.insert("BonePrev", Keys::from_slice(&[VK_UP.0 as _]));
+        m.insert("BoneNext", Keys::from_slice(&[VK_DOWN.0 as _]));
+        m.insert("KeyCopy", Keys::from_slice(&[VK_CONTROL.0 as _, b'C' as _]));
+        m.insert("KeyPaste", Keys::from_slice(&[VK_CONTROL.0 as _, b'V' as _]));
         m.insert("MenuBackgroundBlack", Keys::from_slice(&[b'B' as _]));
         m.insert("MenuEditCenterBias", Keys::from_slice(&[b'D' as _]));
         m.insert("ChangeSpace", Keys::from_slice(&[b'L' as _]));
@@ -273,8 +284,8 @@ impl Default for KeyMap {
         m.insert("ViewTop", Keys::from_slice(&[b'5' as _]));
         m.insert("ViewRight", Keys::from_slice(&[b'6' as _]));
         m.insert("ViewBack", Keys::from_slice(&[b'8' as _]));
-        m.insert("MenuFileSave", Keys::from_slice(&[VK_CONTROL, b'S' as _]));
-        m.insert("InterpolationAuto", Keys::from_slice(&[VK_OEM_6]));
+        m.insert("MenuFileSave", Keys::from_slice(&[VK_CONTROL.0 as _, b'S' as _]));
+        m.insert("InterpolationAuto", Keys::from_slice(&[VK_OEM_6.0 as _]));
         m
     }
 }
@@ -285,21 +296,21 @@ mod tests {
 
     #[test]
     fn vk_to_string_test() {
-        assert!(vk_to_string(VK_LEFT) == "Left");
+        assert!(vk_to_string(VK_LEFT.0 as _) == "Left");
         assert!(vk_to_string(b'A' as _) == "A");
-        assert!(vk_to_string(VK_NUMPAD0) == "Num0");
-        assert!(vk_to_string(VK_F5) == "F5");
+        assert!(vk_to_string(VK_NUMPAD0.0 as _) == "Num0");
+        assert!(vk_to_string(VK_F5.0 as _) == "F5");
         assert!(vk_to_string(0xdf) == "(223)");
     }
 
     #[test]
     fn key_map_test() {
         let mut key_map = KeyMap(HashMap::new());
-        key_map.insert("Undo", Keys(vec![VK_CONTROL, b'Z' as _]));
-        key_map.insert("Redo", Keys(vec![VK_CONTROL, VK_SHIFT, b'Z' as _]));
+        key_map.insert("Undo", Keys(vec![VK_CONTROL.0 as _, b'Z' as _]));
+        key_map.insert("Redo", Keys(vec![VK_CONTROL.0 as _, VK_SHIFT.0 as _, b'Z' as _]));
         let ret: KeyMap = serde_json::from_str(&serde_json::to_string(&key_map).unwrap()).unwrap();
-        assert!(ret.get("Undo").unwrap() == &Keys(vec![VK_CONTROL, b'Z' as _]));
-        assert!(ret.get("Redo").unwrap() == &Keys(vec![VK_CONTROL, VK_SHIFT, b'Z' as _]));
-        assert!(ret.get("Undo").unwrap() != &Keys(vec![VK_SHIFT, b'Z' as _]));
+        assert!(ret.get("Undo").unwrap() == &Keys(vec![VK_CONTROL.0 as _, b'Z' as _]));
+        assert!(ret.get("Redo").unwrap() == &Keys(vec![VK_CONTROL.0 as _, VK_SHIFT.0 as _, b'Z' as _]));
+        assert!(ret.get("Undo").unwrap() != &Keys(vec![VK_SHIFT.0 as _, b'Z' as _]));
     }
 }

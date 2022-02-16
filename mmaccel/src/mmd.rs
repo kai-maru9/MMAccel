@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use bindings::Windows::Win32::Direct3D9::{D3DMATERIAL9, D3DMATRIX};
+use windows::Win32::{Graphics::Direct3D::D3DMATRIX, Graphics::Direct3D9::D3DMATERIAL9};
 
 extern "system" {
     pub fn ExpGetFrameTime() -> f32;

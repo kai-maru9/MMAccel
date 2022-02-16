@@ -1,27 +1,18 @@
 use crate::*;
 
-fn theme_font(hwnd: HWND) -> windows::Result<HFONT> {
+fn theme_font(hwnd: HWND) -> windows::core::Result<HFONT> {
     unsafe {
         let theme_name = to_wchar("TEXTSTYLE");
         let theme = OpenThemeData(hwnd, PWSTR(theme_name.as_ptr() as _));
         if theme == 0 {
             return Err(get_last_error().into());
         }
-        let mut log_font = LOGFONTW::default();
-        GetThemeFont(
-            theme,
-            HDC::NULL,
-            4,
-            0,
-            THEME_PROPERTY_SYMBOL_ID::TMT_FONT.0 as _,
-            &mut log_font,
-        )
-        .ok()?;
+        let log_font = GetThemeFont(theme, HDC(0), 4, 0, TMT_FONT.0 as _)?;
         let font = CreateFontIndirectW(&log_font);
-        if font == HFONT::NULL {
+        if font == HFONT(0) {
             return Err(get_last_error().into());
         }
-        CloseThemeData(theme).ok()?;
+        CloseThemeData(theme)?;
         Ok(font)
     }
 }
@@ -46,16 +37,16 @@ impl Editor {
             let hwnd = CreateWindowExW(
                 WINDOW_EX_STYLE(0),
                 PWSTR(class_name.as_ptr() as _),
-                PWSTR::NULL,
-                WINDOW_STYLE::WS_CHILD | WINDOW_STYLE::WS_BORDER,
+                PWSTR::default(),
+                WS_CHILD | WS_BORDER,
                 0,
                 0,
                 1,
                 1,
                 parent,
-                HMENU::NULL,
-                HINSTANCE::NULL,
-                std::ptr::null_mut(),
+                HMENU(0),
+                HINSTANCE(0),
+                std::ptr::null(),
             );
             let font = theme_font(hwnd);
             if let Ok(font) = font.as_ref() {
@@ -75,8 +66,8 @@ impl Editor {
     #[inline]
     pub fn begin(&mut self, rc: &RECT, category: usize, item: usize, keys: &Keys) {
         unsafe {
-            MoveWindow(self.hwnd, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
-            ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_SHOW);
+            MoveWindow(self.hwnd, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, true);
+            ShowWindow(self.hwnd, SW_SHOW);
             SetFocus(self.hwnd);
             let text = if !keys.is_empty() {
                 to_wchar(keys.to_strings().join("+"))
@@ -96,14 +87,14 @@ impl Editor {
     pub fn end(&mut self) -> Option<EditResult> {
         unsafe {
             SetFocus(GetParent(self.hwnd));
-            ShowWindow(self.hwnd, SHOW_WINDOW_CMD::SW_HIDE);
+            ShowWindow(self.hwnd, SW_HIDE);
             self.result.take()
         }
     }
 
     #[inline]
     pub fn is_visible(&self) -> bool {
-        unsafe { IsWindowVisible(self.hwnd) == TRUE }
+        unsafe { IsWindowVisible(self.hwnd).as_bool() }
     }
 
     #[inline]

@@ -78,11 +78,11 @@ impl Handler {
                 ItemKind::Button(id) => unsafe {
                     let hwnd = GetDlgItem(mmd_window, *id as _);
                     let hwnd = hwnd
-                        .is_null()
+                        .is_invalid()
                         .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
                         .flatten()
                         .unwrap_or(hwnd);
-                    if IsWindowVisible(hwnd) == TRUE && IsWindowEnabled(hwnd) == TRUE {
+                    if IsWindowVisible(hwnd).as_bool() && IsWindowEnabled(hwnd).as_bool() {
                         PostMessageA(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
                         log::debug!("Button: 0x{:x}", id);
                     }
@@ -90,18 +90,18 @@ impl Handler {
                 ItemKind::Edit(id) => unsafe {
                     let hwnd = GetDlgItem(mmd_window, *id as _);
                     let hwnd = hwnd
-                        .is_null()
+                        .is_invalid()
                         .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
                         .flatten()
                         .unwrap_or(hwnd);
-                    if IsWindowVisible(hwnd) == TRUE && IsWindowEnabled(hwnd) == TRUE {
+                    if IsWindowVisible(hwnd).as_bool() && IsWindowEnabled(hwnd).as_bool() {
                         SetFocus(hwnd);
                         log::debug!("Edit: 0x{:x}", id);
                     }
                 },
                 ItemKind::Combo(dir, id) => unsafe {
                     #[inline]
-                    unsafe fn post_set_cur_sel(hwnd: HWND, id: u32, parent: HWND, index: i32) {
+                    unsafe fn post_set_cur_sel(hwnd: HWND, id: u32, parent: HWND, index: isize) {
                         PostMessageW(hwnd, CB_SETCURSEL, WPARAM(index as _), LPARAM(0));
                         PostMessageW(
                             parent,
@@ -114,11 +114,11 @@ impl Handler {
 
                     let hwnd = GetDlgItem(mmd_window, *id as _);
                     let hwnd = hwnd
-                        .is_null()
+                        .is_invalid()
                         .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
                         .flatten()
                         .unwrap_or(hwnd);
-                    if IsWindowVisible(hwnd) == FALSE || IsWindowEnabled(hwnd) == FALSE {
+                    if !IsWindowVisible(hwnd).as_bool() || !IsWindowEnabled(hwnd).as_bool() {
                         return;
                     }
                     let index = SendMessageA(hwnd, CB_GETCURSEL, WPARAM(0), LPARAM(0)).0;
@@ -131,8 +131,8 @@ impl Handler {
                 },
                 ItemKind::Menu(index, sub_index) => unsafe {
                     let m = GetSubMenu(GetMenu(mmd_window), *index as _);
-                    let state = GetMenuState(m, *sub_index as _, MENU_ITEM_FLAGS::MF_BYPOSITION);
-                    if (state & MENU_ITEM_STATE::MFS_DISABLED.0) == 0 {
+                    let state = GetMenuState(m, *sub_index as _, MF_BYPOSITION);
+                    if (state & MFS_DISABLED.0) == 0 {
                         PostMessageA(
                             mmd_window,
                             WM_COMMAND,
@@ -144,7 +144,7 @@ impl Handler {
                 },
                 ItemKind::Fold(hide_id, show_id) => unsafe {
                     let hide = GetDlgItem(mmd_window, *hide_id as _);
-                    if IsWindowVisible(hide) == TRUE {
+                    if IsWindowVisible(hide).as_bool() {
                         PostMessageW(hide, BM_CLICK, WPARAM(0), LPARAM(0));
                         log::debug!("Fold: 0x{:x}", hide_id);
                     } else {
@@ -160,7 +160,7 @@ impl Handler {
                 ItemKind::FoldAll => unsafe {
                     for id in folds {
                         let hwnd = GetDlgItem(mmd_window, *id as _);
-                        if IsWindowVisible(hwnd) == TRUE {
+                        if IsWindowVisible(hwnd).as_bool() {
                             PostMessageW(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
                         }
                     }
@@ -169,7 +169,7 @@ impl Handler {
                 ItemKind::UnfoldAll => unsafe {
                     for id in unfolds {
                         let hwnd = GetDlgItem(mmd_window, *id as _);
-                        if IsWindowVisible(hwnd) == TRUE {
+                        if IsWindowVisible(hwnd).as_bool() {
                             PostMessageW(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
                         }
                     }
@@ -240,9 +240,9 @@ mod tests {
 
     #[test]
     fn keys_eq() {
-        let a = Keys::from_slice(&[VK_LEFT, VK_CONTROL]);
-        let b = Keys::from_slice(&[VK_RIGHT, VK_CONTROL]);
-        let c = Keys::from_slice(&[VK_LEFT, VK_CONTROL]);
+        let a = Keys::from_slice(&[VK_LEFT.0 as _, VK_CONTROL.0 as _]);
+        let b = Keys::from_slice(&[VK_RIGHT.0 as _, VK_CONTROL.0 as _]);
+        let c = Keys::from_slice(&[VK_LEFT.0 as _, VK_CONTROL.0 as _]);
         assert!(a == a);
         assert!(a != b);
         assert!(a == c);

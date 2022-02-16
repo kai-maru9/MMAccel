@@ -9,11 +9,12 @@ mod menu;
 mod mmd;
 mod mmd_map;
 
-use bindings::wrapper::*;
+/*
 use bindings::Windows::Win32::{
     Debug::*, FileSystem::*, KeyboardAndMouseInput::*, Multimedia::*, SystemServices::*, WindowsAndMessaging::*,
     WindowsProgramming::*,
 };
+*/
 use context::*;
 use file_monitor::*;
 use injection::*;
@@ -22,21 +23,22 @@ use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use menu::*;
 use once_cell::sync::OnceCell;
+use windows::Win32::{
+    Foundation::*, Media::*, Storage::FileSystem::*, System::Diagnostics::Debug::*, System::Memory::*,
+    System::SystemServices::*, System::WindowsProgramming::*, System::IO::*, UI::Input::KeyboardAndMouse::*,
+    UI::WindowsAndMessaging::*,
+};
+use wrapper::*;
 
 static mut CONTEXT: OnceCell<Context> = OnceCell::new();
 
 fn error(msg: &str) {
-    message_box(
-        None,
-        msg,
-        "MMAccelエラー",
-        MESSAGEBOX_STYLE::MB_OK | MESSAGEBOX_STYLE::MB_ICONERROR,
-    );
+    message_box(None, msg, "MMAccelエラー", MB_OK | MB_ICONERROR);
 }
 
 unsafe extern "system" fn hook_call_window_proc_ret(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if code < 0 || code != HC_ACTION as i32 {
-        return CallNextHookEx(HHOOK::NULL, code, wparam, lparam);
+        return CallNextHookEx(HHOOK(0), code, wparam, lparam);
     }
     let ret = std::panic::catch_unwind(|| {
         CONTEXT
@@ -48,12 +50,12 @@ unsafe extern "system" fn hook_call_window_proc_ret(code: i32, wparam: WPARAM, l
         PostQuitMessage(1);
         return LRESULT(0);
     }
-    CallNextHookEx(HHOOK::NULL, code, wparam, lparam)
+    CallNextHookEx(HHOOK(0), code, wparam, lparam)
 }
 
 unsafe extern "system" fn hook_get_message(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if code < 0 {
-        return CallNextHookEx(HHOOK::NULL, code, wparam, lparam);
+        return CallNextHookEx(HHOOK(0), code, wparam, lparam);
     }
     let ret = std::panic::catch_unwind(|| {
         let msg = &mut *(lparam.0 as *mut MSG);
@@ -61,7 +63,7 @@ unsafe extern "system" fn hook_get_message(code: i32, wparam: WPARAM, lparam: LP
     });
     match ret {
         Ok(true) => LRESULT(0),
-        Ok(false) => CallNextHookEx(HHOOK::NULL, code, wparam, lparam),
+        Ok(false) => CallNextHookEx(HHOOK(0), code, wparam, lparam),
         Err(_) => {
             PostQuitMessage(1);
             LRESULT(0)

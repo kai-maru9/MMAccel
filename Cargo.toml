@@ -1,8 +1,8 @@
 [workspace]
 members = [
-    "bindings",
     "d3d9",
     "mmaccel",
     "key_config",
     "key_map",
+    "wrapper",
 ]

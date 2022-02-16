@@ -19,22 +19,18 @@ impl ShortcutList {
             let hwnd = CreateWindowExW(
                 WINDOW_EX_STYLE(0),
                 PWSTR(class_name.as_ptr() as _),
-                PWSTR::NULL,
-                WINDOW_STYLE::WS_CHILD
-                    | WINDOW_STYLE::WS_BORDER
-                    | WINDOW_STYLE::WS_VISIBLE
-                    | WINDOW_STYLE::WS_CLIPCHILDREN
-                    | WINDOW_STYLE(LVS_REPORT),
+                PWSTR::default(),
+                WS_CHILD | WS_BORDER | WS_VISIBLE | WS_CLIPCHILDREN | WINDOW_STYLE(LVS_REPORT),
                 pt.x,
                 pt.y,
                 size.width,
                 size.height,
                 HWND(parent.raw_handle() as _),
-                HMENU::NULL,
-                HINSTANCE::NULL,
+                HMENU(0),
+                HINSTANCE(0),
                 std::ptr::null_mut(),
             );
-            if hwnd == HWND::NULL {
+            if hwnd.is_invalid() {
                 return Err(Error::hresult(get_last_error().into(), "CreateWindowEx"));
             }
             let ex_style = SendMessageW(hwnd, LVM_GETEXTENDEDLISTVIEWSTYLE, WPARAM(0), LPARAM(0)).0 as u32;
@@ -44,11 +40,8 @@ impl ShortcutList {
             let cx = columns_size[0] * dpi / 96;
             let text = to_wchar("機能");
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH
-                    | LVCOLUMNW_MASK::LVCF_FMT
-                    | LVCOLUMNW_MASK::LVCF_MINWIDTH
-                    | LVCOLUMNW_MASK::LVCF_TEXT,
-                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
+                mask: LVCF_WIDTH | LVCF_FMT | LVCF_MINWIDTH | LVCF_TEXT,
+                fmt: LVCFMT_LEFT,
                 cx,
                 cxMin: cx,
                 pszText: PWSTR(text.as_ptr() as _),
@@ -59,11 +52,8 @@ impl ShortcutList {
             let cx = columns_size[1] * dpi / 96;
             let text = to_wchar("キー");
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH
-                    | LVCOLUMNW_MASK::LVCF_FMT
-                    | LVCOLUMNW_MASK::LVCF_MINWIDTH
-                    | LVCOLUMNW_MASK::LVCF_TEXT,
-                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
+                mask: LVCF_WIDTH | LVCF_FMT | LVCF_MINWIDTH | LVCF_TEXT,
+                fmt: LVCFMT_LEFT,
                 cx,
                 cxMin: cx,
                 pszText: PWSTR(text.as_ptr() as _),
@@ -74,8 +64,8 @@ impl ShortcutList {
             let cx = size.width as i32 - (columns_size.iter().sum::<i32>() + 5) * dpi / 96;
             let text = to_wchar("重複");
             let column = LVCOLUMNW {
-                mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_FMT | LVCOLUMNW_MASK::LVCF_TEXT,
-                fmt: LVCOLUMNW_FORMAT::LVCFMT_LEFT,
+                mask: LVCF_WIDTH | LVCF_FMT | LVCF_TEXT,
+                fmt: LVCFMT_LEFT,
                 cx,
                 cxMin: cx,
                 pszText: PWSTR(text.as_ptr() as _),
@@ -84,7 +74,7 @@ impl ShortcutList {
             };
             SendMessageW(hwnd, LVM_INSERTCOLUMNW, WPARAM(2), LPARAM(&column as *const _ as _));
             let theme = to_wchar("Explorer");
-            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::NULL).ok().ok();
+            SetWindowTheme(hwnd, PWSTR(theme.as_ptr() as _), PWSTR::default()).ok();
             Ok(Self { hwnd })
         }
     }
@@ -193,17 +183,17 @@ impl ShortcutList {
             let size = size.to_physical(dpi as _);
             SetWindowPos(
                 self.hwnd,
-                HWND::NULL,
+                HWND(0),
                 position.x,
                 position.y,
                 size.width as _,
                 size.height as _,
-                SET_WINDOW_POS_FLAGS::SWP_NOZORDER,
+                SWP_NOZORDER,
             );
             for (i, &cx) in columns_size.iter().enumerate() {
                 let cx = cx * dpi / 96;
                 let column = LVCOLUMNW {
-                    mask: LVCOLUMNW_MASK::LVCF_WIDTH | LVCOLUMNW_MASK::LVCF_MINWIDTH,
+                    mask: LVCF_WIDTH | LVCF_MINWIDTH,
                     cx,
                     cxMin: cx,
                     ..Default::default()
