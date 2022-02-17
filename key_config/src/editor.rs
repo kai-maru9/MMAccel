@@ -88,7 +88,11 @@ impl Editor {
         unsafe {
             SetFocus(GetParent(self.hwnd));
             ShowWindow(self.hwnd, SW_HIDE);
-            self.result.take()
+            self.result.take().and_then(|ret| {
+                (ret.keys != Keys::from_slice(&[VK_SHIFT.0 as u32])
+                    && ret.keys != Keys::from_slice(&[VK_CONTROL.0 as u32]))
+                .then(|| ret)
+            })
         }
     }
 
