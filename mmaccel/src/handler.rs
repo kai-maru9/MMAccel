@@ -39,6 +39,10 @@ impl Handler {
                 log::error!("handler.insert error: {}", k);
             }
         }
+        handler.insert(Keys::from_slice(&[VK_CONTROL.0 as _]), ItemKind::Key(VK_CONTROL.0 as _));
+        handler.insert(Keys::from_slice(&[VK_SHIFT.0 as _]), ItemKind::Key(VK_SHIFT.0 as _));
+        key_states.insert(VK_CONTROL.0 as _, false);
+        key_states.insert(VK_SHIFT.0 as _, false);
         Self {
             input: vec![0; 256],
             input_keys: Keys::with_capacity(3),
@@ -70,6 +74,10 @@ impl Handler {
             }
             match item {
                 ItemKind::Key(k) => {
+                    if key_states.get(k).is_some() && *k != VK_SHIFT.0 as u32 && *k != VK_CONTROL.0 as u32 {
+                        *key_states.get_mut(&(VK_SHIFT.0 as u32)).unwrap() = false;
+                        *key_states.get_mut(&(VK_CONTROL.0 as u32)).unwrap() = false;
+                    }
                     if let Some(ks) = key_states.get_mut(k) {
                         *ks = true;
                         log::debug!("Key: 0x{:x}", k);
@@ -222,12 +230,6 @@ impl Handler {
         }
     }
 
-    #[inline]
-    pub fn input_state(&self, vk: u32) -> bool {
-        (self.input[vk as usize] & 0x80) != 0
-    }
-
-    #[inline]
     pub fn is_pressed(&self, vk: u32) -> bool {
         *self.key_states.get(&vk).unwrap_or(&false)
     }
