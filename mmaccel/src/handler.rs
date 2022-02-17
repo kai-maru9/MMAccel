@@ -10,6 +10,7 @@ pub struct Handler {
     key_states: HashMap<u32, bool>,
     folds: Vec<u32>,
     unfolds: Vec<u32>,
+    tabstop: bool,
 }
 
 impl Handler {
@@ -50,6 +51,7 @@ impl Handler {
             key_states,
             folds,
             unfolds,
+            tabstop: false,
         }
     }
 
@@ -189,6 +191,12 @@ impl Handler {
         get_keyboard_state(&mut self.input);
         self.input_keys.keyboard_state(&self.input);
         log::debug!("key_down input_keys = {:?}", self.input_keys);
+        if get_class_name(hwnd).to_ascii_uppercase() == "EDIT" {
+            if self.input_keys == Keys::from_slice(&[VK_TAB.0 as u32]) {
+                self.tabstop = true;
+                return;
+            }
+        }
         if let Some(item) = self.handler.get(&self.input_keys) {
             handle(
                 item,
@@ -215,7 +223,7 @@ impl Handler {
         }
     }
 
-    pub fn key_up(&mut self, _vk: u32) {
+    pub fn key_up(&mut self, vk: u32) {
         get_keyboard_state(&mut self.input);
         self.input_keys.keyboard_state(&self.input);
         log::debug!("key_up input_keys = {:?}", self.input_keys);
@@ -228,9 +236,15 @@ impl Handler {
                 }
             }
         }
+        if vk == VK_TAB.0 as u32 && self.tabstop {
+            self.tabstop = false;
+        }
     }
 
     pub fn is_pressed(&self, vk: u32) -> bool {
+        if vk == VK_TAB.0 as u32 && self.tabstop {
+            return true;
+        }
         *self.key_states.get(&vk).unwrap_or(&false)
     }
 }
