@@ -1,5 +1,4 @@
 use crate::*;
-use bindings::wrapper::*;
 use handler::Handler;
 use key_map::KeyMap;
 use mmd_map::MmdMap;
@@ -83,7 +82,7 @@ impl Drop for TimePeriod {
 
 fn version_info(hwnd: HWND) {
     let text = format!("MMAccel {}\nby LNSEAB", env!("CARGO_PKG_VERSION"));
-    message_box(Some(hwnd), text, "", MESSAGEBOX_STYLE::MB_OK);
+    message_box(Some(hwnd), text, "", MB_OK);
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -174,15 +173,11 @@ impl Context {
             settings,
             mmd_map,
             _call_window_proc_ret: HookHandle::new(
-                WINDOWS_HOOK_ID::WH_CALLWNDPROCRET,
+                WH_CALLWNDPROCRET,
                 Some(hook_call_window_proc_ret),
                 get_current_thread_id(),
             ),
-            _get_message_handle: HookHandle::new(
-                WINDOWS_HOOK_ID::WH_GETMESSAGE,
-                Some(hook_get_message),
-                get_current_thread_id(),
-            ),
+            _get_message_handle: HookHandle::new(WH_GETMESSAGE, Some(hook_get_message), get_current_thread_id()),
             mmd_window: None,
             handler,
             file_monitor,
@@ -216,7 +211,7 @@ impl Context {
             WM_DESTROY if self.mmd_window.as_ref().map_or(false, |mw| mw.window == data.hwnd) => {
                 if let Some(kc) = self.key_config {
                     unsafe {
-                        if IsWindow(kc) == TRUE {
+                        if IsWindow(kc).as_bool() {
                             PostMessageW(self.key_config, WM_CLOSE, WPARAM(0), LPARAM(0));
                         }
                     }
@@ -260,14 +255,14 @@ impl Context {
                                     let mut byte = 0;
                                     unsafe {
                                         let handle = HANDLE(process.stdout.as_ref().unwrap().as_raw_handle() as _);
-                                        if ReadFile(
+                                        let ret = ReadFile(
                                             handle,
                                             &mut p as *mut _ as _,
                                             std::mem::size_of::<u64>() as _,
                                             &mut byte,
                                             std::ptr::null_mut(),
-                                        ) != FALSE
-                                        {
+                                        );
+                                        if ret.as_bool() {
                                             self.key_config = Some(HWND(p as _));
                                         }
                                     }
@@ -343,10 +338,7 @@ impl Context {
 
     pub fn get_key_state(&self, vk: u32) -> Option<u16> {
         if vk >= 0x07 {
-            let special_keys = (vk == VK_SHIFT || vk == VK_CONTROL)
-                .then(|| self.handler.input_state(vk))
-                .unwrap_or(false);
-            if self.handler.is_pressed(vk) || special_keys {
+            if self.handler.is_pressed(vk) {
                 Some(0xff80)
             } else {
                 Some(0x0000)

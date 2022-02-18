@@ -1,7 +1,6 @@
 #![allow(clippy::mem_discriminant_non_enum)]
 
 use crate::*;
-use bindings::Windows::Win32::MenusAndResources::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum MenuItemType {
@@ -42,13 +41,13 @@ impl<T: MenuCommand> MenuBuilder<T> {
             let name = to_wchar(name);
             let mut info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as _,
-                fMask: MENU_ITEM_MASK::MIIM_TYPE | MENU_ITEM_MASK::MIIM_SUBMENU | MENU_ITEM_MASK::MIIM_ID,
-                fType: MENU_ITEM_TYPE::MFT_STRING,
+                fMask: MIIM_TYPE | MIIM_SUBMENU | MIIM_ID,
+                fType: MFT_STRING,
                 dwTypeData: PWSTR(name.as_ptr() as _),
                 hSubMenu: menu,
                 ..Default::default()
             };
-            InsertMenuItemW(window_menu, ROOT_ID, FALSE, &mut info);
+            InsertMenuItemW(window_menu, ROOT_ID, false, &mut info);
             Self {
                 hwnd,
                 menu,
@@ -65,13 +64,13 @@ impl<T: MenuCommand> MenuBuilder<T> {
             let name = to_wchar(text);
             let mut info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as _,
-                fMask: MENU_ITEM_MASK::MIIM_TYPE | MENU_ITEM_MASK::MIIM_ID,
-                fType: MENU_ITEM_TYPE::MFT_STRING,
+                fMask: MIIM_TYPE | MIIM_ID,
+                fType: MFT_STRING,
                 dwTypeData: PWSTR(name.as_ptr() as _),
                 wID: ROOT_ID + self.id,
                 ..Default::default()
             };
-            InsertMenuItemW(self.menu, self.index, TRUE, &mut info);
+            InsertMenuItemW(self.menu, self.index, false, &mut info);
             self.table
                 .push((std::mem::discriminant(v), std::mem::discriminant(&MenuItemType::Item)));
             self.index += 1;
@@ -86,18 +85,14 @@ impl<T: MenuCommand> MenuBuilder<T> {
             let name = to_wchar(text);
             let mut info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as _,
-                fMask: MENU_ITEM_MASK::MIIM_TYPE | MENU_ITEM_MASK::MIIM_ID | MENU_ITEM_MASK::MIIM_STATE,
-                fType: MENU_ITEM_TYPE::MFT_STRING,
+                fMask: MIIM_TYPE | MIIM_ID | MIIM_STATE,
+                fType: MFT_STRING,
                 dwTypeData: PWSTR(name.as_ptr() as _),
                 wID: ROOT_ID + self.id,
-                fState: if checked {
-                    MENU_ITEM_STATE::MFS_CHECKED
-                } else {
-                    MENU_ITEM_STATE::MFS_UNCHECKED
-                },
+                fState: if checked { MFS_CHECKED } else { MFS_UNCHECKED },
                 ..Default::default()
             };
-            InsertMenuItemW(self.menu, self.index, TRUE, &mut info);
+            InsertMenuItemW(self.menu, self.index, true, &mut info);
             self.table.push((
                 std::mem::discriminant(v),
                 std::mem::discriminant(&MenuItemType::WithCheck(false)),
@@ -113,11 +108,11 @@ impl<T: MenuCommand> MenuBuilder<T> {
         unsafe {
             let mut info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as _,
-                fMask: MENU_ITEM_MASK::MIIM_TYPE,
-                fType: MENU_ITEM_TYPE::MFT_SEPARATOR,
+                fMask: MIIM_TYPE,
+                fType: MFT_SEPARATOR,
                 ..Default::default()
             };
-            InsertMenuItemW(self.menu, self.index, TRUE, &mut info);
+            InsertMenuItemW(self.menu, self.index, true, &mut info);
             self.index += 1;
             self
         }
@@ -146,11 +141,11 @@ impl<T: MenuCommand> Menu<T> {
         unsafe {
             let mut info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as _,
-                fMask: MENU_ITEM_MASK::MIIM_STATE,
+                fMask: MIIM_STATE,
                 ..Default::default()
             };
-            GetMenuItemInfoW(self.menu, ROOT_ID + id, FALSE, &mut info);
-            (info.fState & MENU_ITEM_STATE::MFS_CHECKED) == MENU_ITEM_STATE::MFS_CHECKED
+            GetMenuItemInfoW(self.menu, ROOT_ID + id, false, &mut info);
+            (info.fState & MFS_CHECKED) == MFS_CHECKED
         }
     }
 
@@ -159,15 +154,11 @@ impl<T: MenuCommand> Menu<T> {
         unsafe {
             let mut info = MENUITEMINFOW {
                 cbSize: std::mem::size_of::<MENUITEMINFOW>() as _,
-                fMask: MENU_ITEM_MASK::MIIM_STATE,
-                fState: if checked {
-                    MENU_ITEM_STATE::MFS_CHECKED
-                } else {
-                    MENU_ITEM_STATE::MFS_UNCHECKED
-                },
+                fMask: MIIM_STATE,
+                fState: if checked { MFS_CHECKED } else { MFS_UNCHECKED },
                 ..Default::default()
             };
-            SetMenuItemInfoW(self.menu, ROOT_ID + id, FALSE, &mut info);
+            SetMenuItemInfoW(self.menu, ROOT_ID + id, false, &mut info);
         }
     }
 

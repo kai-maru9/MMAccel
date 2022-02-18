@@ -13,12 +13,7 @@ impl PopupMenu {
         unsafe {
             let menu = CreatePopupMenu();
             let text = to_wchar("解除");
-            AppendMenuW(
-                menu,
-                MENU_ITEM_FLAGS::MF_STRING,
-                IDM_MENU_DETACH as _,
-                PWSTR(text.as_ptr() as _),
-            );
+            AppendMenuW(menu, MF_STRING, IDM_MENU_DETACH as _, PWSTR(text.as_ptr() as _));
             Self {
                 menu,
                 category: 0,
@@ -34,7 +29,7 @@ impl PopupMenu {
             self.item = item;
             TrackPopupMenu(
                 self.menu,
-                TRACK_POPUP_MENU_FLAGS::TPM_LEFTALIGN | TRACK_POPUP_MENU_FLAGS::TPM_VCENTERALIGN,
+                TPM_LEFTALIGN | TPM_VCENTERALIGN,
                 pt.x,
                 pt.y,
                 0,

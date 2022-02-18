@@ -25,12 +25,12 @@ impl FileMonitor {
             let dir_path = to_wchar(&dir_path);
             let dir = CreateFileW(
                 PWSTR(dir_path.as_ptr() as _),
-                FILE_ACCESS_FLAGS::FILE_LIST_DIRECTORY,
-                FILE_SHARE_MODE::FILE_SHARE_READ,
-                std::ptr::null_mut(),
-                FILE_CREATION_DISPOSITION::OPEN_EXISTING,
-                FILE_FLAGS_AND_ATTRIBUTES::FILE_FLAG_BACKUP_SEMANTICS,
-                HANDLE::NULL,
+                FILE_LIST_DIRECTORY,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                std::ptr::null(),
+                OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS,
+                HANDLE(0),
             );
             let mut buffer = [0u8; 2048];
             loop {
@@ -39,8 +39,8 @@ impl FileMonitor {
                     dir,
                     buffer.as_mut_ptr() as _,
                     buffer.len() as _,
-                    FALSE,
-                    FILE_NOTIFY_CHANGE::FILE_NOTIFY_CHANGE_LAST_WRITE,
+                    false,
+                    FILE_NOTIFY_CHANGE_LAST_WRITE,
                     &mut len,
                     std::ptr::null_mut(),
                     None,
@@ -48,7 +48,7 @@ impl FileMonitor {
                 if exit_flag.load(atomic::Ordering::SeqCst) {
                     break;
                 }
-                if ret == FALSE {
+                if !ret.as_bool() {
                     break;
                 }
                 let mut data_ptr = buffer.as_ptr() as *const FILE_NOTIFY_INFORMATION;

@@ -10,6 +10,7 @@ pub struct Handler {
     key_states: HashMap<u32, bool>,
     folds: Vec<u32>,
     unfolds: Vec<u32>,
+    tabstop: bool,
 }
 
 impl Handler {
@@ -39,6 +40,10 @@ impl Handler {
                 log::error!("handler.insert error: {}", k);
             }
         }
+        handler.insert(Keys::from_slice(&[VK_CONTROL.0 as _]), ItemKind::Key(VK_CONTROL.0 as _));
+        handler.insert(Keys::from_slice(&[VK_SHIFT.0 as _]), ItemKind::Key(VK_SHIFT.0 as _));
+        key_states.insert(VK_CONTROL.0 as _, false);
+        key_states.insert(VK_SHIFT.0 as _, false);
         Self {
             input: vec![0; 256],
             input_keys: Keys::with_capacity(3),
@@ -46,6 +51,7 @@ impl Handler {
             key_states,
             folds,
             unfolds,
+            tabstop: false,
         }
     }
 
@@ -70,6 +76,10 @@ impl Handler {
             }
             match item {
                 ItemKind::Key(k) => {
+                    if key_states.get(k).is_some() && *k != VK_SHIFT.0 as u32 && *k != VK_CONTROL.0 as u32 {
+                        *key_states.get_mut(&(VK_SHIFT.0 as u32)).unwrap() = false;
+                        *key_states.get_mut(&(VK_CONTROL.0 as u32)).unwrap() = false;
+                    }
                     if let Some(ks) = key_states.get_mut(k) {
                         *ks = true;
                         log::debug!("Key: 0x{:x}", k);
@@ -78,11 +88,11 @@ impl Handler {
                 ItemKind::Button(id) => unsafe {
                     let hwnd = GetDlgItem(mmd_window, *id as _);
                     let hwnd = hwnd
-                        .is_null()
+                        .is_invalid()
                         .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
                         .flatten()
                         .unwrap_or(hwnd);
-                    if IsWindowVisible(hwnd) == TRUE && IsWindowEnabled(hwnd) == TRUE {
+                    if IsWindowVisible(hwnd).as_bool() && IsWindowEnabled(hwnd).as_bool() {
                         PostMessageA(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
                         log::debug!("Button: 0x{:x}", id);
                     }
@@ -90,18 +100,18 @@ impl Handler {
                 ItemKind::Edit(id) => unsafe {
                     let hwnd = GetDlgItem(mmd_window, *id as _);
                     let hwnd = hwnd
-                        .is_null()
+                        .is_invalid()
                         .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
                         .flatten()
                         .unwrap_or(hwnd);
-                    if IsWindowVisible(hwnd) == TRUE && IsWindowEnabled(hwnd) == TRUE {
+                    if IsWindowVisible(hwnd).as_bool() && IsWindowEnabled(hwnd).as_bool() {
                         SetFocus(hwnd);
                         log::debug!("Edit: 0x{:x}", id);
                     }
                 },
                 ItemKind::Combo(dir, id) => unsafe {
                     #[inline]
-                    unsafe fn post_set_cur_sel(hwnd: HWND, id: u32, parent: HWND, index: i32) {
+                    unsafe fn post_set_cur_sel(hwnd: HWND, id: u32, parent: HWND, index: isize) {
                         PostMessageW(hwnd, CB_SETCURSEL, WPARAM(index as _), LPARAM(0));
                         PostMessageW(
                             parent,
@@ -114,11 +124,11 @@ impl Handler {
 
                     let hwnd = GetDlgItem(mmd_window, *id as _);
                     let hwnd = hwnd
-                        .is_null()
+                        .is_invalid()
                         .then(|| sub_window.map(|sw| GetDlgItem(sw, *id as _)))
                         .flatten()
                         .unwrap_or(hwnd);
-                    if IsWindowVisible(hwnd) == FALSE || IsWindowEnabled(hwnd) == FALSE {
+                    if !IsWindowVisible(hwnd).as_bool() || !IsWindowEnabled(hwnd).as_bool() {
                         return;
                     }
                     let index = SendMessageA(hwnd, CB_GETCURSEL, WPARAM(0), LPARAM(0)).0;
@@ -131,8 +141,8 @@ impl Handler {
                 },
                 ItemKind::Menu(index, sub_index) => unsafe {
                     let m = GetSubMenu(GetMenu(mmd_window), *index as _);
-                    let state = GetMenuState(m, *sub_index as _, MENU_ITEM_FLAGS::MF_BYPOSITION);
-                    if (state & MENU_ITEM_STATE::MFS_DISABLED.0) == 0 {
+                    let state = GetMenuState(m, *sub_index as _, MF_BYPOSITION);
+                    if (state & MFS_DISABLED.0) == 0 {
                         PostMessageA(
                             mmd_window,
                             WM_COMMAND,
@@ -144,7 +154,7 @@ impl Handler {
                 },
                 ItemKind::Fold(hide_id, show_id) => unsafe {
                     let hide = GetDlgItem(mmd_window, *hide_id as _);
-                    if IsWindowVisible(hide) == TRUE {
+                    if IsWindowVisible(hide).as_bool() {
                         PostMessageW(hide, BM_CLICK, WPARAM(0), LPARAM(0));
                         log::debug!("Fold: 0x{:x}", hide_id);
                     } else {
@@ -160,7 +170,7 @@ impl Handler {
                 ItemKind::FoldAll => unsafe {
                     for id in folds {
                         let hwnd = GetDlgItem(mmd_window, *id as _);
-                        if IsWindowVisible(hwnd) == TRUE {
+                        if IsWindowVisible(hwnd).as_bool() {
                             PostMessageW(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
                         }
                     }
@@ -169,7 +179,7 @@ impl Handler {
                 ItemKind::UnfoldAll => unsafe {
                     for id in unfolds {
                         let hwnd = GetDlgItem(mmd_window, *id as _);
-                        if IsWindowVisible(hwnd) == TRUE {
+                        if IsWindowVisible(hwnd).as_bool() {
                             PostMessageW(hwnd, BM_CLICK, WPARAM(0), LPARAM(0));
                         }
                     }
@@ -181,6 +191,12 @@ impl Handler {
         get_keyboard_state(&mut self.input);
         self.input_keys.keyboard_state(&self.input);
         log::debug!("key_down input_keys = {:?}", self.input_keys);
+        if get_class_name(hwnd).to_ascii_uppercase() == "EDIT" {
+            if self.input_keys == Keys::from_slice(&[VK_TAB.0 as u32]) {
+                self.tabstop = true;
+                return;
+            }
+        }
         if let Some(item) = self.handler.get(&self.input_keys) {
             handle(
                 item,
@@ -207,7 +223,7 @@ impl Handler {
         }
     }
 
-    pub fn key_up(&mut self, _vk: u32) {
+    pub fn key_up(&mut self, vk: u32) {
         get_keyboard_state(&mut self.input);
         self.input_keys.keyboard_state(&self.input);
         log::debug!("key_up input_keys = {:?}", self.input_keys);
@@ -220,15 +236,15 @@ impl Handler {
                 }
             }
         }
+        if vk == VK_TAB.0 as u32 && self.tabstop {
+            self.tabstop = false;
+        }
     }
 
-    #[inline]
-    pub fn input_state(&self, vk: u32) -> bool {
-        (self.input[vk as usize] & 0x80) != 0
-    }
-
-    #[inline]
     pub fn is_pressed(&self, vk: u32) -> bool {
+        if vk == VK_TAB.0 as u32 && self.tabstop {
+            return true;
+        }
         *self.key_states.get(&vk).unwrap_or(&false)
     }
 }
@@ -240,9 +256,9 @@ mod tests {
 
     #[test]
     fn keys_eq() {
-        let a = Keys::from_slice(&[VK_LEFT, VK_CONTROL]);
-        let b = Keys::from_slice(&[VK_RIGHT, VK_CONTROL]);
-        let c = Keys::from_slice(&[VK_LEFT, VK_CONTROL]);
+        let a = Keys::from_slice(&[VK_LEFT.0 as _, VK_CONTROL.0 as _]);
+        let b = Keys::from_slice(&[VK_RIGHT.0 as _, VK_CONTROL.0 as _]);
+        let c = Keys::from_slice(&[VK_LEFT.0 as _, VK_CONTROL.0 as _]);
         assert!(a == a);
         assert!(a != b);
         assert!(a == c);

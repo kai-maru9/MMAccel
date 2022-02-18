@@ -9,11 +9,6 @@ mod shortcut_list;
 mod side_menu;
 
 use application::*;
-use bindings::wrapper::*;
-use bindings::Windows::Win32::{
-    Controls::*, DisplayDevices::*, FileSystem::*, Gdi::*, HiDpi::*, KeyboardAndMouseInput::*, MenusAndResources::*,
-    Shell::*, SystemServices::*, WindowsAndMessaging::*,
-};
 use editor::*;
 use error::*;
 use key_map::*;
@@ -24,14 +19,14 @@ use old_key_map::OldKeyMap;
 use popup_menu::*;
 use shortcut_list::*;
 use side_menu::*;
+use windows::Win32::{
+    Foundation::*, Graphics::Gdi::*, Storage::FileSystem::*, UI::Controls::RichEdit::WM_NOTIFY, UI::Controls::*,
+    UI::HiDpi::*, UI::Input::KeyboardAndMouse::*, UI::Shell::*, UI::WindowsAndMessaging::*,
+};
+use wrapper::*;
 
 fn error(text: impl AsRef<str>) {
-    message_box(
-        None,
-        text,
-        "MMAccel キー設定",
-        MESSAGEBOX_STYLE::MB_OK | MESSAGEBOX_STYLE::MB_ICONERROR,
-    );
+    message_box(None, text, "MMAccel キー設定", MB_OK | MB_ICONERROR);
 }
 
 fn build_logger() -> Result<(), Box<dyn std::error::Error + 'static>> {

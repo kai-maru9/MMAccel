@@ -349,7 +349,7 @@ impl wita::EventHandler for Box<Application> {
         );
     }
 
-    fn dpi_changed(&mut self, _: &wita::Window) {
+    fn dpi_changed(&mut self, _: &wita::Window, _dpi: u32) {
         self.editor.resize();
     }
 
@@ -427,15 +427,13 @@ unsafe extern "system" fn main_window_proc(
             } else if nmhdr.hwndFrom == app.shortcut_list.handle() {
                 match nmhdr.code {
                     NM_CUSTOMDRAW => {
-                        let subitem_stage = (NMCUSTOMDRAW_DRAW_STAGE::CDDS_ITEMPREPAINT
-                            | NMCUSTOMDRAW_DRAW_STAGE::CDDS_SUBITEM)
-                            .0 as u32;
+                        let subitem_stage = CDDS_ITEMPREPAINT.0 | CDDS_SUBITEM.0;
                         let mut ncd = (lparam.0 as *mut NMLVCUSTOMDRAW).as_mut().unwrap();
                         match ncd.nmcd.dwDrawStage {
-                            NMCUSTOMDRAW_DRAW_STAGE::CDDS_PREPAINT => {
+                            CDDS_PREPAINT => {
                                 return LRESULT(CDRF_NOTIFYITEMDRAW as _);
                             }
-                            NMCUSTOMDRAW_DRAW_STAGE::CDDS_ITEMPREPAINT => {
+                            CDDS_ITEMPREPAINT => {
                                 return LRESULT(CDRF_NOTIFYSUBITEMDRAW as _);
                             }
                             stage if (stage.0 & subitem_stage) != 0 => {
@@ -484,7 +482,7 @@ unsafe extern "system" fn main_window_proc(
                         }
                     }
                     NM_SETFOCUS => {
-                        let lbutton = (GetKeyState(VK_LBUTTON as _) & 0x80) != 0;
+                        let lbutton = (GetKeyState(VK_LBUTTON.0 as _) & 0x80) != 0;
                         if app.editor.is_visible() && lbutton {
                             if let Some(ret) = app.editor.end() {
                                 app.update_keys_to_file(ret.category, ret.item, Some(ret.keys));
@@ -504,7 +502,7 @@ unsafe extern "system" fn main_window_proc(
             FillRect(
                 HDC(wparam.0 as _),
                 &rc,
-                HBRUSH(GetStockObject(GET_STOCK_OBJECT_FLAGS(SYS_COLOR_INDEX::COLOR_BTNFACE.0 + 1)).0 as _),
+                HBRUSH(GetStockObject(GET_STOCK_OBJECT_FLAGS(COLOR_BTNFACE.0 + 1)).0 as _),
             );
             LRESULT(1)
         }

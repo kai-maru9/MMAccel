@@ -3,44 +3,44 @@ use std::io::BufRead;
 
 fn str_to_vk(k: &str) -> Option<u32> {
     match k.trim() {
-        "esc" => Some(VK_ESCAPE),
-        "tab" => Some(VK_TAB),
-        "capslock" => Some(VK_CAPITAL),
-        "shift" => Some(VK_SHIFT),
-        "ctrl" => Some(VK_CONTROL),
-        "alt" => Some(VK_MENU),
-        "backspace" => Some(VK_BACK),
-        "enter" => Some(VK_RETURN),
-        "space" => Some(VK_SPACE),
-        "printscreen" => Some(VK_SNAPSHOT),
-        "pause" => Some(VK_PAUSE),
-        "insert" => Some(VK_INSERT),
-        "delete" => Some(VK_DELETE),
-        "home" => Some(VK_HOME),
-        "end" => Some(VK_END),
-        "pageup" => Some(VK_PRIOR),
-        "pagedown" => Some(VK_NEXT),
-        "up" => Some(VK_UP),
-        "down" => Some(VK_DOWN),
-        "left" => Some(VK_LEFT),
-        "right" => Some(VK_RIGHT),
-        "num+" => Some(VK_ADD),
-        "num-" => Some(VK_SUBTRACT),
-        "num*" => Some(VK_MULTIPLY),
-        "num/" => Some(VK_DIVIDE),
-        "num." => Some(VK_DECIMAL),
-        "-" => Some(VK_OEM_MINUS),
-        ";" => Some(VK_OEM_PLUS),
-        "," => Some(VK_OEM_COMMA),
-        "." => Some(VK_OEM_PERIOD),
-        ":" => Some(VK_OEM_1),
-        "/" => Some(VK_OEM_2),
-        "@" => Some(VK_OEM_3),
-        "[" => Some(VK_OEM_4),
-        "\\" => Some(VK_OEM_5),
-        "]" => Some(VK_OEM_6),
-        "^" => Some(VK_OEM_7),
-        "_" => Some(VK_OEM_102),
+        "esc" => Some(VK_ESCAPE.0 as u32),
+        "tab" => Some(VK_TAB.0 as u32),
+        "capslock" => Some(VK_CAPITAL.0 as u32),
+        "shift" => Some(VK_SHIFT.0 as u32),
+        "ctrl" => Some(VK_CONTROL.0 as u32),
+        "alt" => Some(VK_MENU.0 as u32),
+        "backspace" => Some(VK_BACK.0 as u32),
+        "enter" => Some(VK_RETURN.0 as u32),
+        "space" => Some(VK_SPACE.0 as u32),
+        "printscreen" => Some(VK_SNAPSHOT.0 as u32),
+        "pause" => Some(VK_PAUSE.0 as u32),
+        "insert" => Some(VK_INSERT.0 as u32),
+        "delete" => Some(VK_DELETE.0 as u32),
+        "home" => Some(VK_HOME.0 as u32),
+        "end" => Some(VK_END.0 as u32),
+        "pageup" => Some(VK_PRIOR.0 as u32),
+        "pagedown" => Some(VK_NEXT.0 as u32),
+        "up" => Some(VK_UP.0 as u32),
+        "down" => Some(VK_DOWN.0 as u32),
+        "left" => Some(VK_LEFT.0 as u32),
+        "right" => Some(VK_RIGHT.0 as u32),
+        "num+" => Some(VK_ADD.0 as u32),
+        "num-" => Some(VK_SUBTRACT.0 as u32),
+        "num*" => Some(VK_MULTIPLY.0 as u32),
+        "num/" => Some(VK_DIVIDE.0 as u32),
+        "num." => Some(VK_DECIMAL.0 as u32),
+        "-" => Some(VK_OEM_MINUS.0 as u32),
+        ";" => Some(VK_OEM_PLUS.0 as u32),
+        "," => Some(VK_OEM_COMMA.0 as u32),
+        "." => Some(VK_OEM_PERIOD.0 as u32),
+        ":" => Some(VK_OEM_1.0 as u32),
+        "/" => Some(VK_OEM_2.0 as u32),
+        "@" => Some(VK_OEM_3.0 as u32),
+        "[" => Some(VK_OEM_4.0 as u32),
+        "\\" => Some(VK_OEM_5.0 as u32),
+        "]" => Some(VK_OEM_6.0 as u32),
+        "^" => Some(VK_OEM_7.0 as u32),
+        "_" => Some(VK_OEM_102.0 as u32),
         _ if k.len() == 1 => {
             let c = k.chars().next().unwrap();
             (!c.is_ascii_control()).then(|| c.to_ascii_uppercase() as u32)
@@ -48,12 +48,12 @@ fn str_to_vk(k: &str) -> Option<u32> {
         _ if k.starts_with("num") => k
             .trim_matches(|c| !char::is_numeric(c))
             .parse()
-            .map(|n: u32| VK_NUMPAD0 + n)
+            .map(|n: u32| VK_NUMPAD0.0 as u32 + n)
             .ok(),
         _ if k.starts_with('f') => k
             .trim_matches(|c| !char::is_numeric(c))
             .parse()
-            .map(|n: u32| VK_F1 + n - 1)
+            .map(|n: u32| VK_F1.0 as u32 + n - 1)
             .ok(),
         _ => None,
     }

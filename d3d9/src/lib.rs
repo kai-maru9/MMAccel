@@ -1,9 +1,9 @@
 #![allow(clippy::missing_safety_doc)]
 
-use bindings::wrapper::*;
-use bindings::Windows::Win32::{SystemServices::*, WindowsAndMessaging::*};
 use libloading::Library;
 use once_cell::sync::OnceCell;
+use windows::Win32::{Foundation::*, System::LibraryLoader::*, System::SystemServices::*, UI::WindowsAndMessaging::*};
+use wrapper::*;
 
 static mut MSIMG32: OnceCell<Library> = OnceCell::new();
 static mut D3D9: OnceCell<Library> = OnceCell::new();
@@ -11,12 +11,7 @@ static mut MME: OnceCell<Library> = OnceCell::new();
 static mut MMACCEL: OnceCell<Library> = OnceCell::new();
 
 fn error(msg: &str) {
-    message_box(
-        None,
-        msg,
-        "d3d9.dll エラー",
-        MESSAGEBOX_STYLE::MB_OK | MESSAGEBOX_STYLE::MB_ICONERROR,
-    );
+    message_box(None, msg, "d3d9.dll エラー", MB_OK | MB_ICONERROR);
 }
 
 #[inline]
@@ -55,7 +50,7 @@ pub unsafe extern "system" fn Direct3DCreate9Ex(version: u32, pp: *mut std::ffi:
             .unwrap();
         f(version, pp)
     } else {
-        E_FAIL.0
+        E_FAIL.0 as _
     }
 }
 
@@ -77,7 +72,7 @@ pub unsafe extern "system" fn DllMain(_: HINSTANCE, reason: u32, _: *mut std::ff
                 }
                 Err(e) => {
                     error(&format!("d3d9.dllを読み込めませんでした ({:?})", e));
-                    return FALSE;
+                    return false.into();
                 }
             }
             let mmaccel = Library::new(path.join("MMAccel").join("mmaccel.dll"));
@@ -87,14 +82,14 @@ pub unsafe extern "system" fn DllMain(_: HINSTANCE, reason: u32, _: *mut std::ff
                 }
                 Err(e) => {
                     error(&format!("mmaccel.dllを読み込めませんでした ({:?})", e));
-                    return FALSE;
+                    return false.into();
                 }
             }
             let mme = Library::new(path.join("MMHack.dll"));
             if let Ok(mme) = mme {
                 MME.set(mme).unwrap();
             }
-            let base_addr = GetModuleHandleW(PWSTR::NULL) as usize;
+            let base_addr = GetModuleHandleW(PWSTR::default()).0 as usize;
             mmaccel_run(base_addr);
         }
         DLL_PROCESS_DETACH => {
@@ -106,5 +101,5 @@ pub unsafe extern "system" fn DllMain(_: HINSTANCE, reason: u32, _: *mut std::ff
         }
         _ => {}
     }
-    TRUE
+    true.into()
 }

@@ -1,14 +1,11 @@
 use crate::*;
 
-pub fn image_import_desc(base_addr: usize, target: &[u8]) -> windows::Result<IMAGE_IMPORT_DESCRIPTOR> {
+pub fn image_import_desc(base_addr: usize, target: &[u8]) -> windows::core::Result<IMAGE_IMPORT_DESCRIPTOR> {
     unsafe {
         let mut size = 0;
-        let mut img_desc_ptr = ImageDirectoryEntryToData(
-            base_addr as _,
-            1,
-            IMAGE_DIRECTORY_ENTRY::IMAGE_DIRECTORY_ENTRY_IMPORT,
-            &mut size,
-        ) as *mut IMAGE_IMPORT_DESCRIPTOR;
+        let mut img_desc_ptr =
+            ImageDirectoryEntryToData(base_addr as _, BOOLEAN(1), IMAGE_DIRECTORY_ENTRY_IMPORT, &mut size)
+                as *mut IMAGE_IMPORT_DESCRIPTOR;
         if img_desc_ptr.is_null() {
             return Err(get_last_error().into());
         }
@@ -33,7 +30,7 @@ pub fn inject_functions(
     base_addr: usize,
     img_desc: &IMAGE_IMPORT_DESCRIPTOR,
     functions: &[(&[u8], u64)],
-) -> windows::Result<()> {
+) -> windows::core::Result<()> {
     unsafe {
         let mut iat_ptr = (base_addr + img_desc.FirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
         let mut int_ptr = (base_addr + img_desc.Anonymous.OriginalFirstThunk as usize) as *mut IMAGE_THUNK_DATA64;
@@ -49,12 +46,12 @@ pub fn inject_functions(
                     name_ptr.as_ref().unwrap().Name.as_ptr() as *const u8,
                     function_name.len(),
                 );
-                let mut old_type = PAGE_TYPE::default();
+                let mut old_type = PAGE_PROTECTION_FLAGS(0);
                 if name.iter().eq(function_name) {
                     VirtualProtect(
                         (&mut iat.u1.Function) as *mut _ as _,
                         std::mem::size_of::<u64>() as _,
-                        PAGE_TYPE::PAGE_READWRITE,
+                        PAGE_READWRITE,
                         &mut old_type,
                     );
                     iat.u1.Function = fp;
