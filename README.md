@@ -1,3 +1,7 @@
+保存機能をどうしても作りたいので、勝手にフォークして勝手に改造します（未完成につきダウンロードはオススメしません。）
+
+
+
 # NordGeits Note
 
 Simply said, this is an MMD plugin that allows you to set keybinds.
