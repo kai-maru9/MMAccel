@@ -19,6 +19,10 @@ serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 log = { version = "0.4.14", features = ["max_level_debug", "release_max_level_info"] }
 log4rs = "1.0.0"
+windows = { version = "0.41.0", features = [
+    # ... 既存のfeatures ...
+    "Win32_UI_WindowsAndMessaging", # これを追加
+] }
 
 [dependencies.windows]
 version = "0.32.0"
